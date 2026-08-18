@@ -991,6 +991,7 @@ window.addEventListener("resize",()=>{ if(S.view==="grafico") renderScatter(); }
 render();
 </script>
 
+
 <style>
 .filters .f-num{width:72px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface-1);color:var(--ink);font:inherit;font-size:13px}
 .filters .f-dash{color:var(--muted);margin:0 -2px}
@@ -1032,6 +1033,6 @@ window.__radar=(function(){
  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",function(){setTimeout(boot,80);}); else setTimeout(boot,80);
  return {apply:apply, flip:flip, boot:boot};
 })();
-<\/script>
+</script>
 </body>
 </html>
