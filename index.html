@@ -990,5 +990,42 @@ document.getElementById("wsum").textContent = "total " + CRITERIOS.reduce((a,c)=
 window.addEventListener("resize",()=>{ if(S.view==="grafico") renderScatter(); });
 render();
 </script>
+
+<style>
+.filters .f-num{width:72px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface-1);color:var(--ink);font:inherit;font-size:13px}
+.filters .f-dash{color:var(--muted);margin:0 -2px}
+</style>
+<script>
+(function(){
+ function boot(){
+  var bar=document.querySelector('.filters'); if(!bar||document.getElementById('fm2min'))return;
+  var anchor=document.getElementById('fquien'); if(!anchor)return;
+  var frag=document.createElement('span'); frag.style.cssText='display:contents';
+  frag.innerHTML='<span class="f-label">m² tech.</span>'+
+   '<input type="number" class="f-num" id="fm2min" placeholder="desde" min="0" step="5">'+
+   '<span class="f-dash">–</span>'+
+   '<input type="number" class="f-num" id="fm2max" placeholder="hasta" min="0" step="5">'+
+   '<span class="f-label">Ordenar</span>'+
+   '<select id="forden"><option value="score">Score</option><option value="precio">Precio</option><option value="pm2">US$ por m²</option><option value="m2">Metros</option><option value="antiguedad">Antigüedad</option><option value="mant">Mantenimiento</option><option value="dorms">Dormitorios</option><option value="nombre">Nombre</option></select>'+
+   '<button class="pill" id="fdir" title="Invertir el orden">↑ Menor a mayor</button>';
+  anchor.parentNode.insertBefore(frag, anchor.nextSibling);
+  var ALLD=DEPAS.slice(), dir=1;
+  function val(d,k){ if(k==="pm2")return (d.precio&&d.m2Techados)?d.precio/d.m2Techados:null; if(k==="m2")return d.m2Techados; if(k==="mant")return d.mantenimiento; if(k==="nombre")return d.nombre; return d[k]; }
+  function apply(){
+   var mn=parseFloat(document.getElementById("fm2min").value), mx=parseFloat(document.getElementById("fm2max").value), k=document.getElementById("forden").value;
+   var list=ALLD.filter(function(d){var m=d.m2Techados; if(!isNaN(mn)&&(m==null||m<mn))return false; if(!isNaN(mx)&&(m==null||m>mx))return false; return true;});
+   if(k!=="score"){ list=list.slice().sort(function(a,b){var x=val(a,k),y=val(b,k); if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1; if(typeof x==="string")return dir*x.localeCompare(y,"es"); return dir*(x-y);}); }
+   S.sort={k:(k==="antiguedad"||k==="nombre")?"score":k, dir:(k==="score"?-1:dir)};
+   DEPAS.length=0; Array.prototype.push.apply(DEPAS,list); render();
+  }
+  ["fm2min","fm2max"].forEach(function(id){document.getElementById(id).addEventListener("input",apply);});
+  document.getElementById("forden").addEventListener("change",apply);
+  document.getElementById("fdir").addEventListener("click",function(){dir=-dir;this.textContent=dir===1?"↑ Menor a mayor":"↓ Mayor a menor";apply();});
+  var ex=document.getElementById("export");
+  if(ex) ex.addEventListener("click",function(){var cur=DEPAS.slice();DEPAS.length=0;Array.prototype.push.apply(DEPAS,ALLD);setTimeout(function(){DEPAS.length=0;Array.prototype.push.apply(DEPAS,cur);},0);},true);
+ }
+ if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",function(){setTimeout(boot,60);}); else setTimeout(boot,60);
+})();
+</script>
 </body>
 </html>
