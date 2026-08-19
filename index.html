@@ -1034,5 +1034,29 @@ window.__radar=(function(){
  return {apply:apply, flip:flip, boot:boot};
 })();
 </script>
+
+<style>#rgb-save{font-size:12px;color:var(--muted);margin-right:10px}#rgb-reset{font-size:12px;background:none;border:0;color:var(--muted);cursor:pointer;text-decoration:underline;margin-right:10px}</style>
+<script>
+(function(){
+ var KEY="rgb_depas_v1", last=null, tag=null;
+ function snap(){ var o={}; DEPAS.forEach(function(d){ o[d.id]={e:d.estado, rr:(d.rating&&d.rating.rodrigo)||0, rm:(d.rating&&d.rating.mama)||0, nr:(d.notas&&d.notas.rodrigo)||"", nm:(d.notas&&d.notas.mama)||"", c:d.cita||""}; }); return JSON.stringify(o); }
+ function restore(){ try{ var raw=localStorage.getItem(KEY); if(!raw) return false; var o=JSON.parse(raw), hit=0;
+  DEPAS.forEach(function(d){ var s=o[d.id]; if(!s) return; hit++;
+   if(s.e) d.estado=s.e;
+   if(!d.rating) d.rating={rodrigo:0,mama:0}; d.rating.rodrigo=s.rr||0; d.rating.mama=s.rm||0;
+   if(!d.notas) d.notas={rodrigo:"",mama:""}; if(typeof s.nr==="string") d.notas.rodrigo=s.nr; if(typeof s.nm==="string") d.notas.mama=s.nm;
+   if(typeof s.c==="string") d.cita=s.c; });
+  return hit>0; }catch(e){ console.error("restore", e); return false; } }
+ function stamp(txt){ if(!tag){ var ex=document.getElementById("export"); if(!ex) return; tag=document.createElement("span"); tag.id="rgb-save"; var rb=document.createElement("button"); rb.id="rgb-reset"; rb.textContent="Borrar mis cambios"; rb.onclick=function(){ if(confirm("Esto borra los estados, notas y estrellas que guardaste en esta computadora. El tablero vuelve a como estaba. ¿Seguro?")){ localStorage.removeItem(KEY); location.reload(); } }; ex.parentNode.insertBefore(rb, ex); ex.parentNode.insertBefore(tag, rb); }
+  tag.textContent=txt; }
+ function save(){ try{ var s=snap(); if(s===last) return; localStorage.setItem(KEY,s); last=s; var d=new Date(); stamp("Guardado "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")); }catch(e){ stamp("No se pudo guardar"); } }
+ function boot(){ var had=restore(); last=snap(); if(had){ try{ render(); }catch(e){} }
+  stamp(had?"Cambios guardados en esta computadora":"Se guarda solo en esta computadora");
+  setInterval(save, 1200);
+  window.addEventListener("beforeunload", save);
+  document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); }); }
+ if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(boot,140); }); else setTimeout(boot,140);
+})();
+</script>
 </body>
 </html>
