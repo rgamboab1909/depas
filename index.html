@@ -1038,25 +1038,105 @@ window.__radar=(function(){
 <style>#rgb-save{font-size:12px;color:var(--muted);margin-right:10px}#rgb-reset{font-size:12px;background:none;border:0;color:var(--muted);cursor:pointer;text-decoration:underline;margin-right:10px}</style>
 <script>
 (function(){
- var KEY="rgb_depas_v1", last=null, tag=null;
- function snap(){ var o={}; DEPAS.forEach(function(d){ o[d.id]={e:d.estado, rr:(d.rating&&d.rating.rodrigo)||0, rm:(d.rating&&d.rating.mama)||0, nr:(d.notas&&d.notas.rodrigo)||"", nm:(d.notas&&d.notas.mama)||"", c:d.cita||""}; }); return JSON.stringify(o); }
- function restore(){ try{ var raw=localStorage.getItem(KEY); if(!raw) return false; var o=JSON.parse(raw), hit=0;
-  DEPAS.forEach(function(d){ var s=o[d.id]; if(!s) return; hit++;
-   if(s.e) d.estado=s.e;
-   if(!d.rating) d.rating={rodrigo:0,mama:0}; d.rating.rodrigo=s.rr||0; d.rating.mama=s.rm||0;
-   if(!d.notas) d.notas={rodrigo:"",mama:""}; if(typeof s.nr==="string") d.notas.rodrigo=s.nr; if(typeof s.nm==="string") d.notas.mama=s.nm;
-   if(typeof s.c==="string") d.cita=s.c; });
-  return hit>0; }catch(e){ console.error("restore", e); return false; } }
- function stamp(txt){ if(!tag){ var ex=document.getElementById("export"); if(!ex) return; tag=document.createElement("span"); tag.id="rgb-save"; var rb=document.createElement("button"); rb.id="rgb-reset"; rb.textContent="Borrar mis cambios"; rb.onclick=function(){ if(confirm("Esto borra los estados, notas y estrellas que guardaste en esta computadora. El tablero vuelve a como estaba. ¿Seguro?")){ localStorage.removeItem(KEY); location.reload(); } }; ex.parentNode.insertBefore(rb, ex); ex.parentNode.insertBefore(tag, rb); }
-  tag.textContent=txt; }
- function save(){ try{ var s=snap(); if(s===last) return; localStorage.setItem(KEY,s); last=s; var d=new Date(); stamp("Guardado "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")); }catch(e){ stamp("No se pudo guardar"); } }
- function boot(){ var had=restore(); last=snap(); if(had){ try{ render(); }catch(e){} }
-  stamp(had?"Cambios guardados en esta computadora":"Se guarda solo en esta computadora");
-  setInterval(save, 1200);
-  window.addEventListener("beforeunload", save);
-  document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); }); }
- if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(boot,140); }); else setTimeout(boot,140);
+ var EXEC="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec";
+ var LK="rgb_depas_v2";
+ var ALL=null, base={}, dirty={}, busy=false, pending=false, elS=null, lastTick=0;
+ function two(n){return (n<10?"0":"")+n;}
+ function hhmm(ms){var d=new Date(ms);return two(d.getHours())+":"+two(d.getMinutes());}
+ function cur(){var o={};ALL.forEach(function(d){o[d.id]={e:d.estado||"",rr:(d.rating&&d.rating.rodrigo)||0,rm:(d.rating&&d.rating.mama)||0,nr:(d.notas&&d.notas.rodrigo)||"",nm:(d.notas&&d.notas.mama)||"",c:d.cita||""};});return o;}
+ function same(a,b){ if(!a||!b) return false; return a.e===b.e&&a.rr===b.rr&&a.rm===b.rm&&a.nr===b.nr&&a.nm===b.nm&&a.c===b.c; }
+ function put(id,v){ var d=null,i;
+   for(i=0;i<ALL.length;i++){ if(ALL[i].id===id){ d=ALL[i]; break; } }
+   if(!d) return;
+   if(v.e) d.estado=v.e;
+   d.rating=d.rating||{}; d.rating.rodrigo=v.rr||0; d.rating.mama=v.rm||0;
+   d.notas=d.notas||{}; d.notas.rodrigo=v.nr||""; d.notas.mama=v.nm||"";
+   d.cita=v.c||"";
+ }
+ function loadLocal(){ try{ return JSON.parse(localStorage.getItem(LK))||{}; }catch(e){ return {}; } }
+ function saveLocal(){ try{ localStorage.setItem(LK, JSON.stringify(base)); }catch(e){} }
+ function status(txt,err){ if(elS){ elS.textContent=txt; elS.style.color = err?"#b45309":"#64748b"; } }
+ function migrate(){
+   if(Object.keys(base).length) return;
+   var old=null; try{ old=JSON.parse(localStorage.getItem("rgb_depas_v1")); }catch(e){}
+   if(!old) return;
+   var now=Date.now();
+   Object.keys(old).forEach(function(k){ var v=old[k]||{};
+     base[k]={e:v.e||"",rr:v.rr||0,rm:v.rm||0,nr:v.nr||"",nm:v.nm||"",c:v.c||"",t:now};
+     dirty[k]=1; });
+   saveLocal();
+ }
+ function mergeIn(remote){ var changed=false;
+   Object.keys(remote||{}).forEach(function(k){ var r=remote[k]; if(!r) return;
+     if(dirty[k]) return;
+     var b=base[k];
+     if(!b || Number(r.t||0) > Number(b.t||0)){ base[k]=r; put(k,r); changed=true; } });
+   return changed; }
+ function scan(){ if(!ALL) return; var c=cur(), now=Date.now(), n=0;
+   Object.keys(c).forEach(function(k){ var b=base[k];
+     if(!b){ var z=c[k]; z.t=0; base[k]=z; return; }
+     if(!same(c[k],b)){ var v=c[k]; v.t=now; base[k]=v; dirty[k]=1; n++; } });
+   if(n){ saveLocal(); push(); } }
+ function tick(){ var n=Date.now(); if(n-lastTick<250) return; lastTick=n; scan(); }
+ function schedule(){ setTimeout(push,600); }
+ function dirtyPayload(){ var p={}; Object.keys(dirty).forEach(function(k){ if(base[k]) p[k]=base[k]; }); return p; }
+ function push(){
+   if(busy){ pending=true; return; }
+   var keys=Object.keys(dirty); if(!keys.length) return;
+   var payload=dirtyPayload();
+   busy=true; status("Guardando...");
+   fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({data:payload})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ busy=false;
+      if(j&&j.ok){ keys.forEach(function(k){ delete dirty[k]; });
+        if(mergeIn(j.data)) { try{ render(); }catch(e){} }
+        saveLocal(); status("Sincronizado "+hhmm(Date.now()));
+        if(pending||Object.keys(dirty).length){ pending=false; push(); } }
+      else { status("Sin conexion - guardado local",1); setTimeout(push,8000); } })
+    .catch(function(){ busy=false; status("Sin conexion - guardado local",1); setTimeout(push,8000); });
+ }
+ function pull(){
+   if(busy) return;
+   fetch(EXEC,{cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){
+     if(j&&j.ok){ if(mergeIn(j.data)){ saveLocal(); try{ render(); }catch(e){} }
+       status("Sincronizado "+hhmm(Date.now())); }
+   }).catch(function(){ status("Sin conexion - guardado local",1); });
+ }
+ function ui(){
+   var ex=document.getElementById("export");
+   elS=document.createElement("span"); elS.id="rgb-sync";
+   elS.style.cssText="font-size:12px;color:#64748b;margin-right:10px;align-self:center;white-space:nowrap";
+   elS.textContent="Conectando...";
+   var b=document.createElement("button"); b.type="button"; b.id="rgb-refresh"; b.textContent="Actualizar";
+   b.style.cssText="margin-right:8px";
+   b.onclick=function(){ scan(); pull(); };
+   if(ex&&ex.parentNode){ ex.parentNode.insertBefore(elS,ex); ex.parentNode.insertBefore(b,ex); }
+   else { document.body.appendChild(elS); document.body.appendChild(b); }
+ }
+ function boot(){
+   try{
+     ALL=DEPAS.slice(); window.__ALL=ALL;
+     base=loadLocal(); migrate();
+     Object.keys(base).forEach(function(k){ put(k,base[k]); });
+     ui();
+     try{ render(); }catch(e){}
+     pull();
+     if(Object.keys(dirty).length) schedule();
+     ["click","change","input","keyup","drop","dragend","mouseup","touchend"].forEach(function(ev){
+       document.addEventListener(ev, tick, true); });
+     setInterval(scan,900);
+     setInterval(pull,20000);
+     window.addEventListener("beforeunload",function(){ scan();
+       if(Object.keys(dirty).length){ try{ navigator.sendBeacon(EXEC, new Blob([JSON.stringify({data:dirtyPayload()})],{type:"text/plain;charset=utf-8"})); }catch(e){} } });
+     document.addEventListener("visibilitychange",function(){
+       if(document.visibilityState==="visible"){ pull(); } else { scan(); push(); } });
+     window.__sync={pull:pull,push:push,scan:scan,base:function(){return base;},dirty:function(){return dirty;}};
+   }catch(e){ console.error("sync", e); }
+ }
+ if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",function(){ setTimeout(boot,200); });
+ else setTimeout(boot,200);
 })();
+
 </script>
 </body>
 </html>
