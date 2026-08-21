@@ -222,7 +222,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
     <input type="search" id="q" placeholder="Buscar zona, calle, corredor…">
     <span class="f-label">Zona</span><select id="fzona"><option value="">Todas</option></select>
     <span class="f-label">Dorms</span><select id="fdorm"><option value="">Todos</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
-    <span class="f-label">Máx US$</span><select id="fprecio"><option value="">Sin tope</option><option value="220000">220k</option><option value="240000">240k</option><option value="250000">250k</option><option value="260000">260k</option></select>
+    <span class="f-label">Máx US$</span><select id="fprecio"><option value="">Sin tope</option><option value="220000">220k</option><option value="240000">240k</option><option value="250000">250k</option><option value="260000">320k</option></select>
     <span class="f-label">Entrega</span><select id="fentrega"><option value="">Cualquiera</option><option value="0">Solo inmediata</option><option value="6">Hasta 6 meses</option><option value="12">Hasta 12 meses</option></select>
     <span class="f-label">Quién</span><select id="fquien"><option value="">Todos</option><option>Rodrigo</option><option>Francisco</option></select>
     <button class="pill" id="ftope" aria-pressed="false">Solo dentro del tope</button>
@@ -265,7 +265,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
   <section id="v-grafico" class="view">
     <div class="chartcard">
       <h2>Precio todo incluido vs. área techada</h2>
-      <p class="sub">Cada punto es un depa, a precio todo incluido (depa + estacionamiento + depósito). La zona roja es lo que se pasa del tope de US$ 260k; la línea punteada gris es el precio por m² promedio del set. Están rotulados los cuatro más baratos por metro y el más caro; pasa el mouse por cualquier punto para ver el resto.</p>
+      <p class="sub">Cada punto es un depa, a precio todo incluido (depa + estacionamiento + depósito). La zona roja es lo que se pasa del tope de US$ 320k; la línea punteada gris es el precio por m² promedio del set. Están rotulados los cuatro más baratos por metro y el más caro; pasa el mouse por cualquier punto para ver el resto.</p>
       <div id="scatter"></div>
       <div class="legend">
         <span><i style="background:var(--s1)"></i> En evaluación</span>
@@ -286,7 +286,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
    ===================================================================== */
 const TC = 3.365; // S/ por US$ (17 ago 2026)
 
-// Tope: 250k cómodo / 260k techo duro — TODO INCLUIDO (depa + estacionamiento + depósito)
+// Tope: 250k cómodo / 320k techo duro — TODO INCLUIDO (depa + estacionamiento + depósito)
 const BUDGET = { ok: 300000, max: 320000 };
 
 // Los 3 destinos que medimos (minutos)
@@ -501,7 +501,7 @@ const FILAS = [
   ["Estacionamiento + depósito", d=>{if(d.precioEst==null&&d.precioDep==null) return pend("por confirmar");
         const e=(d.precioEst||0)+(d.precioDep||0); return e?fmtUSD(e):"incluido";}],
   ["Precio todo incluido", d=>{const t=topeInfo(d); return `<b style="color:${t.color}">${d.precio==null?"por confirmar":fmtUSD(precioTodo(d))}</b>`;}],
-  ["vs. tope de 260k",     d=>{const t=topeInfo(d); return `<span style="color:${t.color}">${t.label}</span>`;}],
+  ["vs. tope de 320k",     d=>{const t=topeInfo(d); return `<span style="color:${t.color}">${t.label}</span>`;}],
   ["Gastos de cierre",     d=>fmtUSD(d.gastosCierre||0)],
   ["Desembolso total",     d=>d.precio==null?pend("por confirmar"):fmtUSD(costoTotal(d))],
   ["US$ por m² (depa)",    d=>d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")],
@@ -834,7 +834,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrar(); });
 function render(){
   const dentro = DEPAS.filter(d=>!sobreTope(d)).length;
   document.getElementById("sub").textContent =
-    `Compra · tope US$ 260k todo incluido · ${DEPAS.length} inmuebles · ${dentro} dentro del tope · ${visibles().length} en vista`;
+    `Compra · tope US$ 320k todo incluido · ${DEPAS.length} inmuebles · ${dentro} dentro del tope · ${visibles().length} en vista`;
   if(S.view==="pipeline") renderBoard();
   if(S.view==="tabla") renderTable();
   if(S.view==="cara") renderCmp();
@@ -940,10 +940,13 @@ window.__radar=(function(){
  function two(n){return (n<10?"0":"")+n;}
  function hhmm(ms){var d=new Date(ms);return two(d.getHours())+":"+two(d.getMinutes());}
  function status(t,err){ if(elS){ elS.textContent=t; elS.style.color=err?"#b45309":"#64748b"; } }
- async function fetchCat(){ var out=[];
+ async function fetchOnce(){ var out=[];
   for(var i=1;i<=6;i++){ var r=await fetch(EXEC+"?blob=cat"+i,{cache:"no-store"}); var j=await r.json();
    if(!j||!j.ok||!j.v) throw new Error("blob"+i); out=out.concat(JSON.parse(j.v)); }
   return out; }
+ async function fetchCat(){ var last=null;
+  for(var a=0;a<3;a++){ try{ return await fetchOnce(); }catch(e){ last=e; await new Promise(function(r){setTimeout(r,1200*(a+1));}); } }
+  throw last; }
  function loadCatCache(){ try{ var s=localStorage.getItem(CK); return s?JSON.parse(s):null; }catch(e){ return null; } }
  function saveCatCache(c){ try{ localStorage.setItem(CK, JSON.stringify(c)); }catch(e){} }
  function cur(){var o={};ALL.forEach(function(d){o[d.id]={e:d.estado||"",rr:(d.rating&&d.rating.rodrigo)||0,rm:(d.rating&&d.rating.mama)||0,nr:(d.notas&&d.notas.rodrigo)||"",nm:(d.notas&&d.notas.mama)||"",c:d.cita||""};});return o;}
