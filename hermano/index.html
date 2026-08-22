@@ -255,7 +255,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
   <section id="v-mapa" class="view">
     <div class="chartcard">
       <h2>Dónde está cada uno</h2>
-      <p class="sub">El color del punto es el precio por m²: mientras más oscuro, más caro por metro. El rombo verde es el Malecón Cisneros. Click en un punto para abrir la ficha. Los proyectos en construcción están ubicados a nivel de calle, no de número exacto.</p>
+      <p class="sub">El color del punto es el precio por m²: mientras más oscuro, más caro por metro. El rombo verde es el centro de la zona (Surco / San Borja). Click en un punto para abrir la ficha. Los proyectos en construcción están ubicados a nivel de calle, no de número exacto.</p>
       <div id="map"></div>
       <div class="legend" id="mapleg"></div>
       <div id="sinubicar" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div>
@@ -520,7 +520,7 @@ const FILAS = [
   ["Balcón / terraza",     d=>d.balcon===true?"Sí":d.balcon===false?"No":pend("por confirmar")],
   ["A Smartfit",           d=>min(d.commute.smartfit)],
   ["Al supermercado",      d=>min(d.commute.super)],
-  ["Al Malecón Cisneros",  d=>min(d.commute.malecon)],
+  ["Al Centro de la zona",  d=>min(d.commute.malecon)],
   ["Caminando",            d=>d.caminando],
   ["Rating Rodrigo",       d=>estrellas(d.rating.rodrigo)],
   ["Rating Francisco",          d=>estrellas(d.rating.mama)],
@@ -598,7 +598,7 @@ function renderScatter(){
 
 /* ============ mapa ============ */
 const RAMPA = ["#86b6ef","#5598e7","#2a78d6","#1c5cab","#104281"]; // azul secuencial, claro→oscuro
-const REFS = [{n:"Parque principal", g:[-12.12747,-77.03571]}];
+const REFS = [{n:"Parque principal", g:[-12.1180,-76.9960]}];
 let MAPA = null, CAPA = null;
 
 function renderMapa(){
@@ -996,7 +996,7 @@ window.__radar=(function(){
    try{ render(); }catch(e){}
    pull();
    ["click","change","input","keyup","drop","dragend","mouseup","touchend"].forEach(function(ev){ document.addEventListener(ev,tick,true); });
-   setInterval(scan,900); setInterval(pull,20000);
+   setInterval(scan,900); setInterval(pull,7000);
    window.addEventListener("beforeunload",function(){ scan();
      if(Object.keys(dirty).length){ try{ navigator.sendBeacon(SYNC, new Blob([JSON.stringify({data:dirtyPayload()})],{type:"text/plain;charset=utf-8"})); }catch(e){} } });
    document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){ pull(); } else { scan(); push(); } });
