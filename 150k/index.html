@@ -941,7 +941,7 @@ window.__radar=(function(){
  function hhmm(ms){var d=new Date(ms);return two(d.getHours())+":"+two(d.getMinutes());}
  function status(t,err){ if(elS){ elS.textContent=t; elS.style.color=err?"#b45309":"#64748b"; } }
  async function fetchOnce(){ var out=[];
-  for(var i=1;i<=1;i++){ var r=await fetch(EXEC+"?blob=t3cat"+i,{cache:"no-store"}); var j=await r.json();
+  for(var i=1;i<=5;i++){ var r=await fetch(EXEC+"?blob=t3cat"+i,{cache:"no-store"}); var j=await r.json();
    if(!j||!j.ok||!j.v) throw new Error("blob"+i); out=out.concat(JSON.parse(j.v)); }
   return out; }
  async function fetchCat(){ var last=null;
