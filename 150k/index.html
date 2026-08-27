@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prospección de departamentos · 150k</title>
@@ -935,7 +937,7 @@ window.__radar=(function(){
 (function(){
  var EXEC="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec";
  var SYNC=EXEC+"?ns=t3";
- var LK="t3_depas_v1", CK="t3_catalogo_v1";
+ var LK="t3_depas_v1", CK="t3_catalogo_v3";
  var ALL=null, base={}, dirty={}, busy=false, pending=false, elS=null, lastTick=0;
  function two(n){return (n<10?"0":"")+n;}
  function hhmm(ms){var d=new Date(ms);return two(d.getHours())+":"+two(d.getMinutes());}
@@ -1007,6 +1009,7 @@ window.__radar=(function(){
    try{ cat=await fetchCat(); saveCatCache(cat); } catch(e){ cat=loadCatCache(); }
    if(!cat||!cat.length){ status("No se pudo cargar el catalogo",1); return; }
    DEPAS.length=0; Array.prototype.push.apply(DEPAS, cat);
+   try{ var hh=document.querySelector("header p, p.sub"); if(hh) hh.textContent = "v3 · "+cat.length+" departamentos · "+hh.textContent; }catch(e){} /* __VER__ */
    try{ render(); }catch(e){}
    bootSync(); }
  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",function(){ setTimeout(boot,150); });
