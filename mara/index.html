@@ -944,5 +944,17 @@ function tick(){var n=Date.now();if(n-lastTick<250)return;lastTick=n;scan();}
 loadLocal();base=cur();redraw();pull();setInterval(pull,20000);
 })();
 </script>
+
+<script>
+(function(){
+var U="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?blob=marafotos";
+var CK='mara_fotos_v1';
+var HOST='https://img10.naventcdn.com/avisos/';
+function url(t){var p=t.split('.');return HOST+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'/'+p[5]+'/'+p[6]+'/360x266/'+p[7]+'.jpg';}
+function fill(txt){if(!txt)return 0;var map={};txt.split(';').forEach(function(row){var i=row.indexOf('=');if(i<0)return;map[row.slice(0,i)]=row.slice(i+1).split('_').map(url);});var n=0;DEPAS.forEach(function(d){var key=(d.url||'').match(/x-(\d+)\.html/);key=key?key[1]:null;if(key&&map[key]&&map[key].length){d.fotos=map[key];n++;}});if(n){try{render();}catch(e){}}return n;}
+try{var c=localStorage.getItem(CK);if(c)fill(c);}catch(e){}
+fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}fill(j.v);}}).catch(function(){});
+})();
+</script>
 </body>
 </html>
