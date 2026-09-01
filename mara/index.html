@@ -995,7 +995,7 @@ s.value=cur;}catch(e){}}
 function pp(){try{var p=document.getElementById("fprecio");if(!p||p.dataset.rent)return;p.dataset.rent="1";
 var v=[["","Sin tope"],["3000","S/ 3,000"],["3500","S/ 3,500"],["4000","S/ 4,000"],["4600","S/ 4,600"]];
 p.innerHTML=v.map(function(x){return "<option value=\""+x[0]+"\">"+x[1]+"</option>";}).join("");}catch(e){}}
-var n=0;var t=setInterval(function(){pz();pp();if(++n>40)clearInterval(t);},500);pz();pp();
+var n=0;var t=setInterval(function(){pz();pp();if(++n>600)clearInterval(t);},1000);pz();pp();
 })();
 </script>
 </body>
