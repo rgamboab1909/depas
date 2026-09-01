@@ -985,18 +985,44 @@ fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j)
 
 <script>
 (function(){
-function pz(){try{
-var s=document.getElementById("fzona");if(!s||!window.DEPAS)return;
+function pz(){try{var s=document.getElementById("fzona");if(!s||typeof DEPAS==="undefined")return;
 var zs=[];DEPAS.forEach(function(d){if(d.zona&&zs.indexOf(d.zona)<0)zs.push(d.zona);});zs.sort();
-var cur=s.value;var have=[];for(var i=0;i<s.options.length;i++)have.push(s.options[i].value);
-var falta=zs.filter(function(z){return have.indexOf(z)<0;});if(!falta.length)return;
-s.innerHTML=["<option value=\"\">Todas</option>"].concat(zs.map(function(z){return "<option value=\""+z+"\">"+z+"</option>";})).join("");
+var have=[];for(var i=0;i<s.options.length;i++)have.push(s.options[i].value);
+var falta=zs.filter(function(z){return have.indexOf(z)<0;});if(!falta.length)return;var cur=s.value;
+s.innerHTML=['<option value="">Todas</option>'].concat(zs.map(function(z){return '<option value="'+z+'">'+z+'</option>';})).join("");
 s.value=cur;}catch(e){}}
 function pp(){try{var p=document.getElementById("fprecio");if(!p||p.dataset.rent)return;p.dataset.rent="1";
 var v=[["","Sin tope"],["3000","S/ 3,000"],["3500","S/ 3,500"],["4000","S/ 4,000"],["4600","S/ 4,600"]];
-p.innerHTML=v.map(function(x){return "<option value=\""+x[0]+"\">"+x[1]+"</option>";}).join("");}catch(e){}}
-var n=0;var t=setInterval(function(){pz();pp();if(++n>600)clearInterval(t);},1000);pz();pp();
-})();
+p.innerHTML=v.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join("");}catch(e){}}
+function refs(){try{if(typeof REFS==="undefined"||REFS.__mara)return;REFS.length=0;
+REFS.push({n:"Colegio Franco Peruano",g:[-12.1342,-76.9797]});
+REFS.push({n:"Casa actual (Bresciani)",g:[-12.15214,-77.02322]});
+REFS.push({n:"Jockey Plaza",g:[-12.0855,-76.977]});REFS.__mara=1;}catch(e){}}
+function leg(){try{var els=document.querySelectorAll("p,div,small,span");for(var i=0;i<els.length;i++){var e=els[i];
+if(e.children.length===0&&e.textContent.indexOf("rombo verde")>-1){e.textContent=e.textContent.replace(/El rombo verde[^.]*\./,"Los rombos verdes son el colegio Franco Peruano, la casa actual de Mara y el Jockey Plaza. Los puntos se dispersan dentro de su urbanizacion: la ubicacion es referencial, no la direccion exacta.");}}}catch(e){}}
+function jit(){try{if(typeof DEPAS==="undefined")return;var g={};
+DEPAS.forEach(function(d){if(!d.geo)return;if(!d.__g0)d.__g0={lat:d.geo.lat,lon:d.geo.lon};var k=d.__g0.lat+","+d.__g0.lon;(g[k]=g[k]||[]).push(d);});
+Object.keys(g).forEach(function(k){var a=g[k];if(a.length<2){a[0].geo={lat:a[0].__g0.lat,lon:a[0].__g0.lon};return;}
+a.forEach(function(d,i){var ang=i*2.399963,rad=0.0005*Math.sqrt(i);
+d.geo={lat:d.__g0.lat+rad*Math.cos(ang),lon:d.__g0.lon+rad*Math.sin(ang)/0.978};});});}catch(e){}}
+function fixleg(){try{var e=document.getElementById("mapleg");if(!e||typeof DEPAS==="undefined")return;
+var pm=[];DEPAS.forEach(function(d){if(!d.geo)return;var v=null;try{v=precioM2(d);}catch(x){}if(typeof v==="number"&&isFinite(v))pm.push(v);});
+if(!pm.length)return;var mn=Math.min.apply(null,pm),mx=Math.max.apply(null,pm),paso=(mx-mn)/5||1;var k=e.children;
+for(var i=1;i<=5&&i<k.length;i++){var lo=Math.round(mn+paso*(i-1)),hi=Math.round(mn+paso*i);
+var t=(i===5)?(lo+"+"):(lo+"\u2013"+hi),sp=k[i],tn=null;
+for(var j=sp.childNodes.length-1;j>=0;j--){if(sp.childNodes[j].nodeType===3){tn=sp.childNodes[j];break;}}
+if(tn)tn.nodeValue=" "+t;else sp.appendChild(document.createTextNode(" "+t));}}catch(e){}}
+try{var _lm=L.map;L.map=function(){var m=_lm.apply(this,arguments);window.__MAPA=m;return m;};}catch(e){}
+var lastN=-1;
+function fit(){try{var m=window.__MAPA;if(!m)return;var b=null;
+m.eachLayer(function(l){var ll=l.getLatLng&&l.getLatLng();if(ll){b=b?b.extend(ll):L.latLngBounds(ll,ll);}});
+if(b&&b.isValid())m.fitBounds(b,{padding:[30,30]});}catch(e){}}
+function hook(){try{if(!window.renderMapa||window.renderMapa.__mara)return;var _r=window.renderMapa;
+var w=function(){refs();jit();var o=_r.apply(this,arguments);
+setTimeout(function(){fixleg();try{var n=DEPAS.filter(function(d){return d.geo;}).length;if(n!==lastN){lastN=n;fit();}}catch(e){}},250);
+return o;};w.__mara=1;window.renderMapa=w;}catch(e){}}
+var n=0;var t=setInterval(function(){pz();pp();refs();leg();hook();if(++n>600)clearInterval(t);},1000);
+pz();pp();refs();leg();hook();})();
 </script>
 </body>
 </html>
