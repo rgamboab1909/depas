@@ -222,7 +222,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
     <input type="search" id="q" placeholder="Buscar zona, calle, corredor…">
     <span class="f-label">Zona</span><select id="fzona"><option value="">Todas</option></select>
     <span class="f-label">Dorms</span><select id="fdorm"><option value="">Todos</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
-    <span class="f-label">Máx US$</span><select id="fprecio"><option value="">Sin tope</option><option value="220000">220k</option><option value="240000">240k</option><option value="250000">250k</option><option value="260000">320k</option></select>
+    <span class="f-label">Máx S/</span><select id="fprecio"><option value="">Sin tope</option><option value="220000">220k</option><option value="240000">240k</option><option value="250000">250k</option><option value="260000">320k</option></select>
     <span class="f-label">Disponible</span><select id="fentrega"><option value="">Cualquiera</option><option value="0">Solo inmediata</option><option value="6">Hasta 6 meses</option><option value="12">Hasta 12 meses</option></select>
     <span class="f-label">Quién</span><select id="fquien"><option value="">Todos</option><option>Rodrigo</option><option>Francisco</option></select>
     <button class="pill" id="ftope" aria-pressed="false">Solo dentro del tope</button>
@@ -265,7 +265,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
   <section id="v-grafico" class="view">
     <div class="chartcard">
       <h2>Precio todo incluido vs. área techada</h2>
-      <p class="sub">Cada punto es un depa, a precio todo incluido (depa + estacionamiento + depósito). La zona roja es lo que se pasa del tope de US$ 320k; la línea punteada gris es el precio por m² promedio del set. Están rotulados los cuatro más baratos por metro y el más caro; pasa el mouse por cualquier punto para ver el resto.</p>
+      <p class="sub">Cada punto es un depa, a precio todo incluido (depa + estacionamiento + depósito). La zona roja es lo que se pasa del tope de S/ 320k; la línea punteada gris es el precio por m² promedio del set. Están rotulados los cuatro más baratos por metro y el más caro; pasa el mouse por cualquier punto para ver el resto.</p>
       <div id="scatter"></div>
       <div class="legend">
         <span><i style="background:var(--s1)"></i> En evaluación</span>
@@ -284,7 +284,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
    DATOS — Rodrigo: no necesitas tocar esto, yo lo regenero.
    Si quieres agregar algo a mano, copia un bloque y edítalo.
    ===================================================================== */
-const TC = 3.365; // S/ por US$ (17 ago 2026)
+const TC = 3.365; // S/ por S/ (17 ago 2026)
 
 // Tope: 250k cómodo / 320k techo duro — TODO INCLUIDO (depa + estacionamiento + depósito)
 const BUDGET = {ok:4000, max:4600};
@@ -339,13 +339,13 @@ const enLimite   = d => d.precio!=null && precioTodo(d) > BUDGET.ok && precioTod
 function topeInfo(d){
   if(d.precio==null) return {clase:"", txt:"?", label:"Precio por confirmar", color:"var(--muted)"};
   const p = precioTodo(d), delta = p - BUDGET.max;
-  if(p > BUDGET.max) return {clase:"worst", txt:"+"+fmtK(delta).replace("US$ ",""), label:"Sobre el tope", color:"var(--critical)"};
+  if(p > BUDGET.max) return {clase:"worst", txt:"+"+fmtK(delta).replace("S/ ",""), label:"Sobre el tope", color:"var(--critical)"};
   if(p > BUDGET.ok)  return {clase:"", txt:"en el límite", label:"En el límite", color:"var(--warning)"};
-  return {clase:"best", txt:"−"+fmtK(BUDGET.ok-p).replace("US$ ",""), label:"Dentro del tope", color:"var(--good)"};
+  return {clase:"best", txt:"−"+fmtK(BUDGET.ok-p).replace("S/ ",""), label:"Dentro del tope", color:"var(--good)"};
 }
 const precioM2  = d => d.precio==null ? null : d.precio / d.m2Techados;
-const fmtUSD = n => "US$ " + Math.round(n).toLocaleString("es-PE");
-const fmtK   = n => "US$ " + (n/1000).toFixed(0) + "k";
+const fmtUSD = n => "S/ " + Math.round(n).toLocaleString("es-PE");
+const fmtK   = n => "S/ " + (n/1000).toFixed(0) + "k";
 const fmtPEN = n => "S/ " + Math.round(n).toLocaleString("es-PE");
 const min = v => typeof v==="number" ? v+" min" : `<span style="color:var(--muted)">por confirmar</span>`;
 const pend = t => `<span style="color:var(--muted)">${t}</span>`;
@@ -497,7 +497,7 @@ const FILAS = [
   ["vs. tope de 320k",     d=>{const t=topeInfo(d); return `<span style="color:${t.color}">${t.label}</span>`;}],
   ["Gastos de cierre",     d=>fmtUSD(d.gastosCierre||0)],
   ["Desembolso total",     d=>d.precio==null?pend("por confirmar"):fmtUSD(costoTotal(d))],
-  ["US$ por m² (depa)",    d=>d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")],
+  ["S/ por m² (depa)",    d=>d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")],
   ["Mantenimiento",        d=>d.mantenimiento?fmtPEN(d.mantenimiento)+" / mes":pend("no publicado")],
   ["m² techados / libres", d=>`${d.m2Techados} / ${d.m2Libres||0}`],
   ["Dormitorios",          d=>d.dorms],
@@ -725,9 +725,9 @@ function abrir(id){
        <div class="kv"><span>vs. tope de ${fmtK(BUDGET.max)}</span><b style="color:${tp.color}">${tp.label}</b></div>
        <div class="kv"><span>Gastos de cierre</span><b>${fmtUSD(d.gastosCierre||0)}</b></div>
        <div class="kv"><span>Desembolso total</span><b>${d.precio==null?pend("por confirmar"):fmtUSD(costoTotal(d))}</b></div>
-       <div class="kv"><span>US$ por m² (depa)</span><b>${d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")}</b></div>
+       <div class="kv"><span>S/ por m² (depa)</span><b>${d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")}</b></div>
        <div class="kv"><span>Mantenimiento</span><b>${d.mantenimiento?fmtPEN(d.mantenimiento):pend("no publicado")}</b></div>
-       <div class="kv"><span>Cuota ref. (20% inicial, 20 años, 9%)</span><b>${d.precio==null?pend("—"):fmtPEN(cuota(d)*TC)}</b></div>
+       <div class="kv"><span>Referencia mensual</span><b>${d.precio==null?pend("—"):fmtPEN(cuota(d)*TC)}</b></div>
        ${d.incluye?`<div style="font-size:12px;color:var(--muted);margin-top:7px">${d.incluye}</div>`:""}
      </section>
      <section><h4>El depa</h4>
@@ -816,7 +816,7 @@ function gcalURL(d){
     + "&location=" + encodeURIComponent(d.direccion + ", " + d.zona + ", Lima")
     + "&details=" + encodeURIComponent(det);
 }
-function cuota(d){ // cuota mensual referencial en US$: 80% financiado, 20 años, 9% anual
+function cuota(d){ // cuota mensual referencial en S/: 80% financiado, 20 años, 9% anual
   const P=d.precio*0.8, i=0.09/12, n=240; return P*i/(1-Math.pow(1+i,-n));
 }
 function cerrar(){ document.getElementById("ov").classList.remove("on"); document.body.style.overflow = ""; }
@@ -910,7 +910,7 @@ window.__radar=(function(){
     '<span class="f-dash">–</span>'+
     '<input type="number" class="f-num" id="fm2max" placeholder="hasta" min="0" step="5" oninput="__radar.apply()" onchange="__radar.apply()">'+
     '<span class="f-label">Ordenar</span>'+
-    '<select id="forden" onchange="__radar.apply()"><option value="tablero">Orden del tablero</option><option value="precio">Precio</option><option value="pm2">US$ por m²</option><option value="m2">Metros</option><option value="antiguedad">Antigüedad</option><option value="mant">Mantenimiento</option><option value="dorms">Dormitorios</option><option value="banos">Baños</option><option value="estac">Estacionamientos</option><option value="nombre">Nombre</option></select>'+
+    '<select id="forden" onchange="__radar.apply()"><option value="tablero">Orden del tablero</option><option value="precio">Precio</option><option value="pm2">S/ por m²</option><option value="m2">Metros</option><option value="antiguedad">Antigüedad</option><option value="mant">Mantenimiento</option><option value="dorms">Dormitorios</option><option value="banos">Baños</option><option value="estac">Estacionamientos</option><option value="nombre">Nombre</option></select>'+
     '<button class="pill" id="fdir" title="Invertir el orden" onclick="__radar.flip()">↑ Menor a mayor</button>';
    anchor.parentNode.insertBefore(f, anchor.nextSibling);
    var ex=document.getElementById("export");
@@ -954,6 +954,32 @@ function url(t){var p=t.split('.');return HOST+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'
 function fill(txt){if(!txt)return 0;var map={};txt.split(';').forEach(function(row){var i=row.indexOf('=');if(i<0)return;map[row.slice(0,i)]=row.slice(i+1).split('_').map(url);});var n=0;DEPAS.forEach(function(d){var key=(d.url||'').match(/x-(\d+)\.html/);key=key?key[1]:null;if(key&&map[key]&&map[key].length){d.fotos=map[key];n++;}});if(n){try{render();}catch(e){}}return n;}
 try{var c=localStorage.getItem(CK);if(c)fill(c);}catch(e){}
 fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}fill(j.v);}}).catch(function(){});
+})();
+</script>
+
+<script>
+(function(){
+var U="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?blob=maraurb", CK='mara_urb_v1';
+var GEO={"Sagitario":[-12.16422,-76.99527],"Camino Real":[-12.14722,-77.01099],"La Cruceta":[-12.15625,-76.99001],"Cruz De Surco":[-12.1203,-76.98767],"Chama":[-12.12606,-76.99653],"Los Alamos":[-12.166,-76.98455],"La Castellana":[-12.13461,-77.00211],"Valle Hermoso":[-12.1233,-76.97458],"Higuereta":[-12.12261,-76.99474],"Vista Alegre":[-12.134,-76.99212],"La Alborada":[-12.12494,-76.9886],"Monterrico":[-12.09502,-76.96964],"Los Alamos De Monterrico":[-12.10842,-76.96362],"Los Rosales":[-12.14296,-76.99826],"Parque Alto":[-12.14483,-77.01169],"Las Gardenias":[-12.11915,-76.97429],"Las Magnolias":[-12.13444,-77.0112],"El Derby":[-12.09857,-76.97792],"Tambo De Monterrico":[-12.11585,-76.9922],"Pampas De Santa Teresa":[-12.12208,-76.98054],"Santa Constanza":[-12.08294,-76.97707],"Chacarilla Del Estanque":[-12.11,-76.985],"Las Casuarinas":[-12.115,-76.97],"Santa Teresa":[-12.12208,-76.98054],"Surco":[-12.1251,-76.98216],"Barranco":[-12.14396,-77.02027]};
+var COL=[-12.1342,-76.9797], CASA=[-12.15214,-77.02322], JOCK=[-12.0855,-76.9770];
+function hav(a,b){var R=6371,p1=a[0]*Math.PI/180,p2=b[0]*Math.PI/180,dp=(b[0]-a[0])*Math.PI/180,dl=(b[1]-a[1])*Math.PI/180;var x=Math.sin(dp/2)*Math.sin(dp/2)+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);return 2*R*Math.asin(Math.sqrt(x));}
+function mins(k){return Math.round(k/22*60+4);}
+function ph(t){var p=t.split('.');return 'https://img10.naventcdn.com/avisos/'+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'/'+p[5]+'/'+p[6]+'/360x266/'+p[7]+'.jpg';}
+function norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+function add(txt){if(!txt)return 0;
+ var seen={};DEPAS.forEach(function(d){seen[norm(d.nombre)+'|'+d.dorms+'|'+(d.m2Techados||0)+'|'+Math.round((d.precio||0)/50)]=1;});
+ var n=0, k=DEPAS.length;
+ txt.split(';').forEach(function(row){var f=row.split('|');if(f.length<9)return;
+  var id=f[0],p=+f[1],mm=+f[2],m2=+f[3],dor=+f[4],ban=+f[5],est=+f[6],urb=f[7]||'Surco',zona=f[8],fot=(f[9]||'').split(',').filter(Boolean).map(ph);
+  var key=norm(urb)+'|'+dor+'|'+m2+'|'+Math.round(p/50); if(seen[key])return; seen[key]=1;
+  var g=GEO[urb]||GEO[zona]||GEO['Surco'];
+  var aprox=!GEO[urb];
+  k++;var tot=p+mm;
+  DEPAS.push({id:'U'+(++n),nombre:urb+(aprox?' (sin urb.)':''),zona:zona,direccion:urb+', '+zona,estado:'por_ver',quien:'Radar',fuente:'Urbania',url:'https://urbania.pe/inmueble/clasificado/x-'+id,agregado:'2026-09-01',cita:'',contacto:'por confirmar en el aviso',precio:p,precioEst:null,precioDep:null,incluye:mm?('Alquiler S/'+p+' + mantenimiento S/'+mm+' = S/'+tot+' al mes.'):('Alquiler S/'+p+'. El aviso NO declara mantenimiento.'),mantenimiento:mm||null,gastosCierre:0,m2Techados:m2||null,m2Libres:0,dorms:dor,banos:ban||null,medioBano:false,piso:null,ascensores:null,estreno:false,antiguedad:null,entrega:'inmediata',entregaNota:'Disponibilidad por confirmar.',estacionamientos:est,deposito:null,orientacion:'por confirmar',luz:null,vista:'por confirmar',balcon:false,commute:{colegio:mins(hav(g,COL)),casa:mins(hav(g,CASA)),jockey:mins(hav(g,JOCK))},caminando:'',fotos:fot,maps:'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(urb+', Lima')+'&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco',rating:{mara:0,rodrigo:0},notas:{mara:'',rodrigo:''},pros:[(tot<=4000?('S/'+tot+' al mes, dentro del presupuesto'):('S/'+tot+' al mes')),(est?est+' estacionamiento(s)':null),'Nuevo: viene de Urbania'].filter(Boolean),contras:[(est?null:'Sin estacionamiento'),(mm?null:'No declara mantenimiento'),(aprox?'Ubicacion aproximada':null),'Sin visitar y sin confirmar por telefono'].filter(Boolean),geo:{lat:g[0],lon:g[1]}});
+ });
+ if(n){try{render();}catch(e){}} return n;}
+try{var c=localStorage.getItem(CK);if(c)add(c);}catch(e){}
+fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}add(j.v);}}).catch(function(){});
 })();
 </script>
 </body>
