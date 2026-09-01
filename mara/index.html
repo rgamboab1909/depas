@@ -985,26 +985,49 @@ fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j)
 
 <script>
 (function(){
+var EX="https://script.google.com/macros/s/"+["AKfycbyq","VBFLqFgA","hy0RQtvo","jLjAu24E","-KmHlYwN","X5xhdTp4","Vw2eNKsq","77mbewA2","qSIpff49","5g"].join("")+"/exec";
+var COL=[-12.1342,-76.9797],CASA=[-12.15214,-77.02322],JOCK=[-12.0855,-76.977];
+function hav(a,b,c,d){var R=6371,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t;var h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(h));}
+function mins(k){return Math.round(k/22*60+4);}
+function cmt(la,lo){return {colegio:mins(hav(la,lo,COL[0],COL[1])),casa:mins(hav(la,lo,CASA[0],CASA[1])),jockey:mins(hav(la,lo,JOCK[0],JOCK[1]))};}
+function navurl(c){var p=c.split(".");if(p.length<3)return "";return "https://img"+p[0]+".naventcdn.com/avisos/"+p.slice(1,-1).join("/")+"/360x266/"+p[p.length-1]+".jpg";}
+function icurl(c){var i=c.indexOf(".");if(i<0)return "";return "https://cdn4.fincaraiz.com.co/"+(c.slice(0,i)==="r"?"repo/img":"web")+"/th.outside384x275."+c.slice(i+1);}
+function nz(z){z=(z||"").trim();if(/surco/i.test(z))return "Surco";if(/san\s*borja/i.test(z))return "San Borja";if(/barranco/i.test(z))return "Barranco";return z;}
+function tit(s){return (s||"").split("-").filter(function(w){return !/^(alquiler|de|en|el|la|los|las|departamento|depa|m)$/i.test(w);}).map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" ");}
+function key(d){return [nz(d.zona),d.dorms||0,d.m2Techados||0,Math.round((d.precio||0)/25)].join("|");}
+var LOCTXT="",INFTXT="";
+function aplicaLoc(){if(!LOCTXT||typeof DEPAS==="undefined")return;var m={};
+LOCTXT.split(";").forEach(function(r){var p=r.split("|");if(p[0])m[p[0]]=p;});
+DEPAS.forEach(function(d){var q=(d.url||"").match(/x-(\d+)/);if(!q)return;var p=m[q[1]];if(!p)return;
+if(p[4])d.direccion=p[4];var z=nz(p[3]);if(z)d.zona=z;
+if(p[1]&&p[2]){var la=+p[1],lo=+p[2];d.geo={lat:la,lon:lo};d.commute=cmt(la,lo);d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
+d.fotos=p[5]?[navurl(p[5])]:[];});}
+function aplicaInfo(){if(!INFTXT||typeof DEPAS==="undefined"||DEPAS.__inf)return;
+var have={},ids={};DEPAS.forEach(function(d){have[key(d)]=1;var q=(d.url||"").match(/x-(\d+)/);if(q)ids[q[1]]=1;});
+var base=DEPAS[0]||{},n=0;
+INFTXT.split(";").forEach(function(r){var p=r.split("|");if(p.length<12||!p[0]||ids[p[0]])return;
+var zona=nz(p[9]);var d={};for(var k in base)d[k]=null;
+d.id="F"+(++n);d.zona=zona;d.nombre=(tit(p[11])||zona)+" ("+zona+")";d.direccion=tit(p[11]);
+d.estado="por_ver";d.quien="";d.fuente="InfoCasas";d.url="https://www.infocasas.com.pe"+(p[11].charAt(0)==="*"?("/"+p[11].slice(1)):("/departamento-en-"+p[11]+"/"+p[0]));
+d.precio=+p[1]||0;d.mantenimiento=+p[2]||0;d.m2Techados=+p[3]||0;d.m2Libres=0;d.dorms=+p[4]||0;d.banos=+p[5]||0;d.estacionamientos=+p[6]||0;
+d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={};d.notas="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";
+if(have[key(d)])return;have[key(d)]=1;
+if(p[7]&&p[8]){var la=+p[7],lo=+p[8];d.geo={lat:la,lon:lo};d.commute=cmt(la,lo);d.geoOk=1;}else{d.geo=null;d.geoOk=0;d.commute={};}
+d.fotos=p[10]?[icurl(p[10])]:[];DEPAS.push(d);});DEPAS.__inf=1;}
+function carga(){fetch(EX+"?blob=maraloc",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){LOCTXT=j.v;aplicaLoc();if(window.render)render();}}).catch(function(){});
+fetch(EX+"?blob=marainfo",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){INFTXT=j.v;aplicaInfo();aplicaLoc();if(window.render)render();}}).catch(function(){});}
 function pz(){try{var s=document.getElementById("fzona");if(!s||typeof DEPAS==="undefined")return;
 var zs=[];DEPAS.forEach(function(d){if(d.zona&&zs.indexOf(d.zona)<0)zs.push(d.zona);});zs.sort();
 var have=[];for(var i=0;i<s.options.length;i++)have.push(s.options[i].value);
-var falta=zs.filter(function(z){return have.indexOf(z)<0;});if(!falta.length)return;var cur=s.value;
-s.innerHTML=['<option value="">Todas</option>'].concat(zs.map(function(z){return '<option value="'+z+'">'+z+'</option>';})).join("");
-s.value=cur;}catch(e){}}
+if(!zs.filter(function(z){return have.indexOf(z)<0;}).length)return;var cur=s.value;
+s.innerHTML=['<option value="">Todas</option>'].concat(zs.map(function(z){return '<option value="'+z+'">'+z+'</option>';})).join("");s.value=cur;}catch(e){}}
 function pp(){try{var p=document.getElementById("fprecio");if(!p||p.dataset.rent)return;p.dataset.rent="1";
 var v=[["","Sin tope"],["3000","S/ 3,000"],["3500","S/ 3,500"],["4000","S/ 4,000"],["4600","S/ 4,600"]];
 p.innerHTML=v.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join("");}catch(e){}}
 function refs(){try{if(typeof REFS==="undefined"||REFS.__mara)return;REFS.length=0;
-REFS.push({n:"Colegio Franco Peruano",g:[-12.1342,-76.9797]});
-REFS.push({n:"Casa actual (Bresciani)",g:[-12.15214,-77.02322]});
-REFS.push({n:"Jockey Plaza",g:[-12.0855,-76.977]});REFS.__mara=1;}catch(e){}}
+REFS.push({n:"Colegio Franco Peruano",g:COL});REFS.push({n:"Casa actual (Bresciani)",g:CASA});REFS.push({n:"Jockey Plaza",g:JOCK});REFS.__mara=1;}catch(e){}}
 function leg(){try{var els=document.querySelectorAll("p,div,small,span");for(var i=0;i<els.length;i++){var e=els[i];
-if(e.children.length===0&&e.textContent.indexOf("rombo verde")>-1){e.textContent=e.textContent.replace(/El rombo verde[^.]*\./,"Los rombos verdes son el colegio Franco Peruano, la casa actual de Mara y el Jockey Plaza. Los puntos se dispersan dentro de su urbanizacion: la ubicacion es referencial, no la direccion exacta.");}}}catch(e){}}
-function jit(){try{if(typeof DEPAS==="undefined")return;var g={};
-DEPAS.forEach(function(d){if(!d.geo)return;if(!d.__g0)d.__g0={lat:d.geo.lat,lon:d.geo.lon};var k=d.__g0.lat+","+d.__g0.lon;(g[k]=g[k]||[]).push(d);});
-Object.keys(g).forEach(function(k){var a=g[k];if(a.length<2){a[0].geo={lat:a[0].__g0.lat,lon:a[0].__g0.lon};return;}
-a.forEach(function(d,i){var ang=i*2.399963,rad=0.0005*Math.sqrt(i);
-d.geo={lat:d.__g0.lat+rad*Math.cos(ang),lon:d.__g0.lon+rad*Math.sin(ang)/0.978};});});}catch(e){}}
+if(e.children.length===0&&/rombo verde|rombos verdes/.test(e.textContent)){e.textContent="El color del punto es el alquiler por m2: mientras mas oscuro, mas caro por metro. Los rombos verdes son el colegio Franco Peruano, la casa actual de Mara y el Jockey Plaza. Solo se dibujan los avisos con direccion verificada; los que no la tienen aparecen en el tablero pero no en el mapa. Click en un punto para abrir la ficha.";}}}catch(e){}}
 function fixleg(){try{var e=document.getElementById("mapleg");if(!e||typeof DEPAS==="undefined")return;
 var pm=[];DEPAS.forEach(function(d){if(!d.geo)return;var v=null;try{v=precioM2(d);}catch(x){}if(typeof v==="number"&&isFinite(v))pm.push(v);});
 if(!pm.length)return;var mn=Math.min.apply(null,pm),mx=Math.max.apply(null,pm),paso=(mx-mn)/5||1;var k=e.children;
@@ -1018,10 +1041,11 @@ function fit(){try{var m=window.__MAPA;if(!m)return;var b=null;
 m.eachLayer(function(l){var ll=l.getLatLng&&l.getLatLng();if(ll){b=b?b.extend(ll):L.latLngBounds(ll,ll);}});
 if(b&&b.isValid())m.fitBounds(b,{padding:[30,30]});}catch(e){}}
 function hook(){try{if(!window.renderMapa||window.renderMapa.__mara)return;var _r=window.renderMapa;
-var w=function(){refs();jit();var o=_r.apply(this,arguments);
+var w=function(){refs();var o=_r.apply(this,arguments);
 setTimeout(function(){fixleg();try{var n=DEPAS.filter(function(d){return d.geo;}).length;if(n!==lastN){lastN=n;fit();}}catch(e){}},250);
 return o;};w.__mara=1;window.renderMapa=w;}catch(e){}}
-var n=0;var t=setInterval(function(){pz();pp();refs();leg();hook();if(++n>600)clearInterval(t);},1000);
+carga();
+var n=0;var t=setInterval(function(){pz();pp();refs();leg();hook();aplicaLoc();if(++n>240)clearInterval(t);},1000);
 pz();pp();refs();leg();hook();})();
 </script>
 </body>
