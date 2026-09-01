@@ -1,1 +1,1052 @@
-undefined
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alquiler · Mara</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb; --plane:#f9f9f7;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7;
+  --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --chip:#f0efec;
+  --radius:12px;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#1a1a19; --plane:#0d0d0d;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835;
+  --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --chip:#262624;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-0.01em}
+a{color:var(--s1)}
+button,select,input{font:inherit;color:inherit}
+
+/* ---------- shell ---------- */
+header.top{position:sticky;top:0;z-index:1200;background:var(--surface-1);border-bottom:1px solid var(--border);padding:12px 20px}
+.top-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{font-size:17px;font-weight:680}
+.brand small{display:block;font-size:12px;font-weight:450;color:var(--muted);letter-spacing:0}
+.spacer{flex:1}
+.tabs{display:flex;gap:4px;background:var(--chip);padding:3px;border-radius:10px}
+.tabs button{border:0;background:transparent;padding:7px 13px;border-radius:8px;cursor:pointer;color:var(--ink-2);font-weight:550}
+.tabs button[aria-selected="true"]{background:var(--surface-1);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.iconbtn{border:1px solid var(--border);background:var(--surface-1);border-radius:9px;padding:7px 11px;cursor:pointer;color:var(--ink-2)}
+.iconbtn:hover{color:var(--ink)}
+
+/* ---------- filters ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.filters select,.filters input[type=search]{background:var(--surface-1);border:1px solid var(--border);border-radius:9px;padding:6px 10px}
+.filters input[type=search]{min-width:170px}
+.f-label{font-size:12px;color:var(--muted);margin-right:-4px}
+.pill{border:1px solid var(--border);background:var(--surface-1);border-radius:999px;padding:5px 11px;cursor:pointer;color:var(--ink-2);font-size:13px}
+.pill[aria-pressed="true"]{background:var(--s1);border-color:var(--s1);color:#fff}
+
+main{padding:18px 20px 60px;max-width:1500px;margin:0 auto}
+.view{display:none} .view.on{display:block}
+
+/* ---------- pipeline ---------- */
+.board{display:grid;grid-template-columns:repeat(6,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:120px}
+.col h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.col h3 .dot{width:8px;height:8px;border-radius:50%}
+.col h3 .n{margin-left:auto;background:var(--chip);color:var(--ink-2);border-radius:999px;padding:1px 7px;font-size:11px}
+.card{background:var(--plane);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;margin-bottom:9px;transition:transform .08s}
+.card:hover{transform:translateY(-1px);border-color:var(--s1)}
+.card.over .p{color:var(--critical)}
+.card .thumb{height:96px;background:var(--chip);background-size:cover;background-position:center}
+.card .thumb.nofoto{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
+.card .body{padding:8px 10px}
+.card .t{font-weight:600;font-size:13px;line-height:1.25;margin-bottom:3px}
+.card .z{font-size:11.5px;color:var(--muted)}
+.card .row{display:flex;align-items:baseline;gap:6px;margin-top:6px;flex-wrap:wrap}
+.card .p{font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+.card .pm{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mini{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:11px;background:var(--chip);color:var(--ink-2);border-radius:6px;padding:1.5px 6px;font-variant-numeric:tabular-nums}
+.tag.who{background:transparent;border:1px solid var(--border)}
+.scorebar{height:4px;background:var(--grid);border-radius:4px;overflow:hidden;margin-top:8px}
+.scorebar i{display:block;height:100%;background:var(--s1);border-radius:4px}
+
+/* ---------- table ---------- */
+.tablewrap{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--surface-1);cursor:pointer;z-index:2}
+th:hover{color:var(--ink)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--chip)}
+.best{color:var(--good);font-weight:650}
+.worst{color:var(--critical)}
+.stt{display:inline-flex;align-items:center;gap:6px;font-size:12px}
+.stt i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.chk{width:16px;height:16px;accent-color:var(--s1)}
+
+/* ---------- compare ---------- */
+.cmp{display:grid;gap:12px;grid-template-columns:180px repeat(var(--n,3),minmax(190px,1fr));background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:14px;overflow-x:auto}
+.cmp .h{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding-top:6px}
+.cmp .cell{padding:6px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+.cmp .cell.head{border:0;padding-bottom:10px}
+.cmp .cell.head img{width:100%;height:110px;object-fit:cover;border-radius:9px;background:var(--chip);display:block;margin-bottom:7px}
+.hint{color:var(--muted);font-size:13px;padding:20px;text-align:center}
+
+/* ---------- weights ---------- */
+.panel{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px 20px;margin-top:10px}
+.w label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2)}
+.w input{width:100%;accent-color:var(--s1)}
+details>summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--ink-2);list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸ ";color:var(--muted)}
+details[open]>summary::before{content:"▾ "}
+
+/* ---------- chart ---------- */
+.chartcard{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.chartcard h2{font-size:15px;margin-bottom:2px}
+.chartcard p.sub{color:var(--muted);font-size:12.5px;margin:0 0 10px}
+svg text{font-family:var(--font)}
+.tip{position:fixed;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.14);opacity:0;transition:opacity .1s;z-index:3100;max-width:240px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+/* ---------- mapa ---------- */
+#map{height:560px;border-radius:10px;border:1px solid var(--border);background:var(--chip);
+  position:relative;z-index:0;isolation:isolate}
+.leaflet-container{font-family:var(--font);background:var(--chip)}
+.leaflet-popup-content-wrapper{border-radius:10px}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4}
+.leaflet-popup-content b{font-size:13.5px}
+.leaflet-popup-content .pz{color:#52514e;font-size:12px}
+.mk-lbl{background:transparent;border:0;font-size:11px;font-weight:600;color:var(--ink);
+  text-shadow:0 0 3px var(--surface-1),0 0 3px var(--surface-1),0 0 3px var(--surface-1);white-space:nowrap}
+@media (max-width:760px){#map{height:70vh}}
+
+/* ---------- modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:3000;padding:24px;overflow:auto;
+  -webkit-overflow-scrolling:touch}
+.overlay.on{display:block}
+.sheet{background:var(--surface-1);border-radius:16px;max-width:1080px;margin:0 auto 24px;overflow:hidden;
+  border:1px solid var(--border);box-shadow:0 24px 64px rgba(0,0,0,.35)}
+.sheet header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;
+  position:sticky;top:0;background:var(--surface-1);z-index:2}
+.sheet .close{margin-left:auto;border:0;background:var(--chip);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--ink-2)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:16px 20px 4px}
+.gal img{width:100%;height:130px;object-fit:cover;border-radius:9px;background:var(--chip);cursor:zoom-in;border:1px solid var(--border)}
+/* si la foto no carga (link caído o bloqueado), degrada a un cuadro limpio */
+img.rota{background:var(--chip);position:relative}
+img.rota::after{content:"foto no disponible";position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;background:var(--chip);color:var(--muted);font-size:11px;border-radius:9px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;padding:16px 20px 22px}
+.dgrid section h4{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 7px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.kv b{font-weight:600;font-variant-numeric:tabular-nums}
+.notes{background:var(--plane);border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--ink-2);margin-top:8px}
+.notes b{color:var(--ink)}
+ul.chk-list{margin:0;padding-left:0;list-style:none;font-size:13px;columns:2;column-gap:22px}
+ul.chk-list li{padding:3px 0;break-inside:avoid;color:var(--ink-2)}
+ul.chk-list li::before{content:"☐ ";color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 18px}
+.actions a,.actions button{border:1px solid var(--border);background:var(--plane);border-radius:9px;padding:7px 12px;cursor:pointer;text-decoration:none;color:var(--ink-2);font-size:13px}
+.actions a:hover{border-color:var(--s1);color:var(--s1)}
+/* ---------- celular ---------- */
+@media (max-width:760px){
+  body{font-size:15px}
+  header.top{padding:10px 12px}
+  main{padding:12px 12px 48px}
+  .brand{font-size:15px;flex:1 1 100%;padding-right:92px}
+  .tabs{width:100%;overflow-x:auto}
+  .tabs button{flex:1;padding:8px 10px;font-size:13.5px;white-space:nowrap}
+  #theme{position:absolute;top:10px;right:12px}
+  .filters{gap:6px}
+  .filters input[type=search]{flex:1 1 100%;min-width:0}
+  .filters select,.pill{font-size:13px;padding:5px 9px}
+  .f-label{display:none}
+  #export{display:none}
+  /* el pipeline se apila: una sección por estado, tarjetas a ancho completo */
+  .board{display:block}
+  .col{margin-bottom:12px;min-height:0}
+  .col:has(.vacia){display:none}
+  .card{display:flex;gap:10px;align-items:stretch}
+  .card .thumb{height:auto;width:96px;min-height:96px;flex:0 0 96px}
+  .card .body{flex:1;min-width:0}
+  /* tablas y comparativas: scroll horizontal con aviso */
+  .tablewrap,.cmp{-webkit-overflow-scrolling:touch}
+  .cmp{grid-template-columns:132px repeat(var(--n,3),minmax(150px,1fr));padding:10px;font-size:13px}
+  .cmp .h{font-size:11px}
+  .cmp .cell.head img,.cmp .cell.head>div{height:80px}
+  /* ficha */
+  .overlay{padding:0}
+  .sheet{border-radius:0;min-height:100vh}
+  .sheet header{padding:14px 16px}
+  .gal{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));padding:12px 16px 0}
+  .gal img{height:100px}
+  .dgrid{grid-template-columns:1fr;gap:14px;padding:14px 16px 20px}
+  ul.chk-list{columns:1}
+  .actions{padding:0 16px 14px}
+  .actions a,.actions button{flex:1 1 auto;text-align:center}
+  .chartcard{padding:12px}
+}
+@media print{header.top,.filters,.actions,.tabs{display:none}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand">Alquiler para Mara<small id="sub">Compra · Lima</small></div>
+    <div class="spacer"></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-view="pipeline" aria-selected="true">Pipeline</button>
+      <button role="tab" data-view="tabla" aria-selected="false">Comparativa</button>
+      <button role="tab" data-view="cara" aria-selected="false">Cara a cara</button>
+      <button role="tab" data-view="mapa" aria-selected="false">Mapa</button>
+      <button role="tab" data-view="grafico" aria-selected="false">Precio / m²</button>
+    </div>
+    <button class="iconbtn" id="theme">◐ Tema</button>
+  </div>
+  <div class="filters">
+    <input type="search" id="q" placeholder="Buscar zona, calle, corredor…">
+    <span class="f-label">Zona</span><select id="fzona"><option value="">Todas</option></select>
+    <span class="f-label">Dorms</span><select id="fdorm"><option value="">Todos</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+    <span class="f-label">Máx S/</span><select id="fprecio"><option value="">Sin tope</option><option value="220000">220k</option><option value="240000">240k</option><option value="250000">250k</option><option value="260000">320k</option></select>
+    <span class="f-label">Disponible</span><select id="fentrega"><option value="">Cualquiera</option><option value="0">Solo inmediata</option><option value="6">Hasta 6 meses</option><option value="12">Hasta 12 meses</option></select>
+    <span class="f-label">Quién</span><select id="fquien"><option value="">Todos</option><option>Rodrigo</option><option>Francisco</option></select>
+    <button class="pill" id="ftope" aria-pressed="false">Solo dentro del tope</button>
+    <button class="pill" id="fmedio" aria-pressed="false">Con ½ baño</button>
+    <button class="pill" id="fest" aria-pressed="false">Solo estreno</button>
+    <button class="pill" id="factivos" aria-pressed="true">Ocultar descartados</button>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="export">Exportar cambios</button>
+  </div>
+</header>
+
+<main>
+  <div class="panel">
+    <details>
+      <summary>Ajustar prioridades del score · <span id="wsum" style="color:var(--muted);font-weight:400"></span></summary>
+      <div class="wgrid" id="wgrid"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">El score es relativo al set actual: 100 = el mejor de la lista en cada criterio. Cambia los pesos y el ranking se recalcula al instante.</div>
+    </details>
+  </div>
+
+  <section id="v-pipeline" class="view on"><div class="board" id="board"></div></section>
+
+  <section id="v-tabla" class="view">
+    <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">Marca hasta 4 con el check y anda a <b>Cara a cara</b>. Click en la fila abre la ficha completa.</div>
+  </section>
+
+  <section id="v-cara" class="view"><div id="cmp"></div></section>
+
+  <section id="v-mapa" class="view">
+    <div class="chartcard">
+      <h2>Dónde está cada uno</h2>
+      <p class="sub">El color del punto es el precio por m²: mientras más oscuro, más caro por metro. El rombo verde es el centro de la zona (Surco / San Borja). Click en un punto para abrir la ficha. Los proyectos en construcción están ubicados a nivel de calle, no de número exacto.</p>
+      <div id="map"></div>
+      <div class="legend" id="mapleg"></div>
+      <div id="sinubicar" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section id="v-grafico" class="view">
+    <div class="chartcard">
+      <h2>Precio todo incluido vs. área techada</h2>
+      <p class="sub">Cada punto es un depa, a precio todo incluido (depa + estacionamiento + depósito). La zona roja es lo que se pasa del tope de S/ 320k; la línea punteada gris es el precio por m² promedio del set. Están rotulados los cuatro más baratos por metro y el más caro; pasa el mouse por cualquier punto para ver el resto.</p>
+      <div id="scatter"></div>
+      <div class="legend">
+        <span><i style="background:var(--s1)"></i> En evaluación</span>
+        <span><i style="background:var(--good)"></i> Finalista</span>
+        <span><i style="background:var(--muted)"></i> Descartado</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="ov"><div class="sheet" id="sheet"></div></div>
+<div class="tip" id="tip"></div>
+
+<script>
+/* =====================================================================
+   DATOS — Rodrigo: no necesitas tocar esto, yo lo regenero.
+   Si quieres agregar algo a mano, copia un bloque y edítalo.
+   ===================================================================== */
+const TC = 3.365; // S/ por S/ (17 ago 2026)
+
+// Tope: 250k cómodo / 320k techo duro — TODO INCLUIDO (depa + estacionamiento + depósito)
+const BUDGET = {ok:4000, max:4600};
+
+// Los 3 destinos que medimos (minutos)
+const DESTINOS = [{k:'colegio',label:'Colegio Franco Peruano'},{k:'casa',label:'Casa actual (Bresciani)'},{k:'jockey',label:'Jockey Plaza'}];
+
+/* <<<DATOS — bloque generado desde Notion, no editar a mano */
+const DEPAS = [{"id":"M01","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-147278097.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1800 + mantenimiento S/120 = S/1920 al mes.","mantenimiento":120,"gastosCierre":0,"m2Techados":100,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/1920 al mes, dentro del presupuesto","100 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M02","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149735230.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1750,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1750 + mantenimiento S/210 = S/1960 al mes.","mantenimiento":210,"gastosCierre":0,"m2Techados":79,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/1960 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M03","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149698580.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2000. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":74,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2000 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M04","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150943841.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1850,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1850 + mantenimiento S/180 = S/2030 al mes.","mantenimiento":180,"gastosCierre":0,"m2Techados":80,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2030 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M05","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149501529.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1950,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1950 + mantenimiento S/120 = S/2070 al mes.","mantenimiento":120,"gastosCierre":0,"m2Techados":110,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2070 al mes, dentro del presupuesto","110 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M06","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150719341.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1890,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1890 + mantenimiento S/180 = S/2070 al mes.","mantenimiento":180,"gastosCierre":0,"m2Techados":78,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2070 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M07","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150746670.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2100,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2100. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":79,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2100 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M08","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-142308229.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2200. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":1,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2200 al mes, dentro del presupuesto","120 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M09","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150796088.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2200. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2200 al mes, dentro del presupuesto","1 estacionamiento","120 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M10","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150946390.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2000 + mantenimiento S/200 = S/2200 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":69,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2200 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M11","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-148050703.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2100,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2100 + mantenimiento S/160 = S/2260 al mes.","mantenimiento":160,"gastosCierre":0,"m2Techados":69,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2260 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M12","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149697523.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1800 + mantenimiento S/512 = S/2312 al mes.","mantenimiento":512,"gastosCierre":0,"m2Techados":74,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2312 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M13","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150948583.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2100,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2100 + mantenimiento S/220 = S/2320 al mes.","mantenimiento":220,"gastosCierre":0,"m2Techados":74,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2320 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M14","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150894810.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2200 + mantenimiento S/150 = S/2350 al mes.","mantenimiento":150,"gastosCierre":0,"m2Techados":77,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2350 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M15","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150850672.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2500. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":85,"m2Libres":0,"dorms":3,"banos":1,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2500 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M16","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149735120.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2390,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2390 + mantenimiento S/150 = S/2540 al mes.","mantenimiento":150,"gastosCierre":0,"m2Techados":75,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2540 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M17","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150820391.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2350,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2350 + mantenimiento S/230 = S/2580 al mes.","mantenimiento":230,"gastosCierre":0,"m2Techados":74,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2580 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M18","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150580492.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2400,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2400 + mantenimiento S/200 = S/2600 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":78,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2600 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M19","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150602056.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2400,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2400 + mantenimiento S/200 = S/2600 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":77,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2600 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M20","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150953199.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2500 + mantenimiento S/200 = S/2700 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":110,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2700 al mes, dentro del presupuesto","110 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M21","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150927472.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2700,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2700 + mantenimiento S/140 = S/2840 al mes.","mantenimiento":140,"gastosCierre":0,"m2Techados":90,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2840 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M22","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150706557.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2750,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2750 + mantenimiento S/150 = S/2900 al mes.","mantenimiento":150,"gastosCierre":0,"m2Techados":86,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2900 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M23","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150039536.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2700,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2700 + mantenimiento S/250 = S/2950 al mes.","mantenimiento":250,"gastosCierre":0,"m2Techados":86,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2950 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M24","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149955418.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2700,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2700 + mantenimiento S/300 = S/3000 al mes.","mantenimiento":300,"gastosCierre":0,"m2Techados":91,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3000 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M25","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150928606.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2800 + mantenimiento S/200 = S/3000 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":116,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3000 al mes, dentro del presupuesto","1 estacionamiento","116 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M26","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149473728.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3105,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3105. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":130,"m2Libres":0,"dorms":3,"banos":4,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3105 al mes, dentro del presupuesto","130 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M27","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150922584.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3000 + mantenimiento S/200 = S/3200 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3200 al mes, dentro del presupuesto","1 estacionamiento","120 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M28","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150833683.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3300,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3300. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3300 al mes, dentro del presupuesto","1 estacionamiento","120 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M29","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150923104.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3400,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3400. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":95,"m2Libres":0,"dorms":3,"banos":1,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3400 al mes, dentro del presupuesto","1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M30","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150576024.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3500. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":126,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3500 al mes, dentro del presupuesto","126 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M31","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150879659.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3800. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":92,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3800 al mes, dentro del presupuesto","7 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M32","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150697305.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3400,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3400 + mantenimiento S/500 = S/3900 al mes.","mantenimiento":500,"gastosCierre":0,"m2Techados":105,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3900 al mes, dentro del presupuesto","1 estacionamiento","105 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M33","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-143530234.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3515,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3515 + mantenimiento S/500 = S/4015 al mes.","mantenimiento":500,"gastosCierre":0,"m2Techados":130,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","130 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4015 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M34","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150853422.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4100,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4100. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":107,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","107 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4100 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M35","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150858753.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4104,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4104. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":140,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","140 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4104 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M36","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149365584.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3700,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3700 + mantenimiento S/450 = S/4150 al mes.","mantenimiento":450,"gastosCierre":0,"m2Techados":122,"m2Libres":0,"dorms":3,"banos":4,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","122 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4150 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M37","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-147724798.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4250,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4250. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":140,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","140 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4250 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M38","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150578433.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3800 + mantenimiento S/450 = S/4250 al mes.","mantenimiento":450,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","120 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4250 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M39","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150932830.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4250,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4250. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":192,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","192 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4250 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M40","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150414956.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4000 + mantenimiento S/400 = S/4400 al mes.","mantenimiento":400,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","120 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4400 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M41","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150838913.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4000 + mantenimiento S/400 = S/4400 al mes.","mantenimiento":400,"gastosCierre":0,"m2Techados":89,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["S/4400 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M42","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150656783.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4056,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4056 + mantenimiento S/400 = S/4456 al mes.","mantenimiento":400,"gastosCierre":0,"m2Techados":137,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","137 m² para 3 dormitorios","7 min al Colegio Franco Peruano"],"contras":["S/4456 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M43","nombre":"Surco (sin urb.)","zona":"Surco","direccion":"Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-146582144.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4400,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4400 + mantenimiento S/150 = S/4550 al mes.","mantenimiento":150,"gastosCierre":0,"m2Techados":98,"m2Libres":0,"dorms":3,"banos":1,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":7,"casa":19,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","7 min al Colegio Franco Peruano"],"contras":["S/4550 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1251,"lon":-76.98216}},{"id":"M44","nombre":"Valle Hermoso","zona":"Surco","direccion":"Valle Hermoso, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150761763.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2800 + mantenimiento S/270 = S/3070 al mes.","mantenimiento":270,"gastosCierre":0,"m2Techados":89,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":21,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Valle+Hermoso,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3070 al mes, dentro del presupuesto","2 estacionamientos","8 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1233,"lon":-76.97458}},{"id":"M45","nombre":"Valle Hermoso","zona":"Surco","direccion":"Valle Hermoso, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150893486.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2800 + mantenimiento S/270 = S/3070 al mes.","mantenimiento":270,"gastosCierre":0,"m2Techados":89,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":21,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Valle+Hermoso,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3070 al mes, dentro del presupuesto","2 estacionamientos","8 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1233,"lon":-76.97458}},{"id":"M46","nombre":"Vista Alegre","zona":"Surco","direccion":"Vista Alegre, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150949498.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3000 + mantenimiento S/270 = S/3270 al mes.","mantenimiento":270,"gastosCierre":0,"m2Techados":105,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":15,"jockey":19},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Vista+Alegre,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3270 al mes, dentro del presupuesto","1 estacionamiento","105 m² para 3 dormitorios","8 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.134,"lon":-76.99212}},{"id":"M47","nombre":"La Alborada","zona":"Surco","direccion":"La Alborada, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150200590.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3200 + mantenimiento S/200 = S/3400 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":94,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":17,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=La+Alborada,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3400 al mes, dentro del presupuesto","1 estacionamiento","8 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.12494,"lon":-76.9886}},{"id":"M48","nombre":"Valle Hermoso","zona":"Surco","direccion":"Valle Hermoso, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150702201.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3300,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3300 + mantenimiento S/350 = S/3650 al mes.","mantenimiento":350,"gastosCierre":0,"m2Techados":105,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":21,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Valle+Hermoso,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3650 al mes, dentro del presupuesto","2 estacionamientos","105 m² para 3 dormitorios","8 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1233,"lon":-76.97458}},{"id":"M49","nombre":"Valle Hermoso","zona":"Surco","direccion":"Valle Hermoso, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150775866.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4000. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":113,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":21,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Valle+Hermoso,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/4000 al mes, dentro del presupuesto","1 estacionamiento","113 m² para 3 dormitorios","8 min al Colegio Franco Peruano"],"contras":["No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1233,"lon":-76.97458}},{"id":"M50","nombre":"Valle Hermoso","zona":"Surco","direccion":"Valle Hermoso, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150943138.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3800 + mantenimiento S/400 = S/4200 al mes.","mantenimiento":400,"gastosCierre":0,"m2Techados":90,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":21,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Valle+Hermoso,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","8 min al Colegio Franco Peruano"],"contras":["S/4200 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1233,"lon":-76.97458}},{"id":"M51","nombre":"La Alborada","zona":"Surco","direccion":"La Alborada, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150624151.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4100,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4100 + mantenimiento S/350 = S/4450 al mes.","mantenimiento":350,"gastosCierre":0,"m2Techados":130,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":17,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=La+Alborada,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","130 m² para 3 dormitorios","8 min al Colegio Franco Peruano"],"contras":["S/4450 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.12494,"lon":-76.9886}},{"id":"M52","nombre":"Pampas De Santa Teresa","zona":"Surco","direccion":"Pampas De Santa Teresa, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-62642197.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3910,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3910 + mantenimiento S/560 = S/4470 al mes.","mantenimiento":560,"gastosCierre":0,"m2Techados":113,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":8,"casa":20,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Pampas+De+Santa+Teresa,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","113 m² para 3 dormitorios","8 min al Colegio Franco Peruano"],"contras":["S/4470 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.12208,"lon":-76.98054}},{"id":"M53","nombre":"Cruz De Surco","zona":"Surco","direccion":"Cruz De Surco, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150626275.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2300,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2300. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":74,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":9,"casa":18,"jockey":15},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Cruz+De+Surco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2300 al mes, dentro del presupuesto","1 estacionamiento","9 min al Colegio Franco Peruano"],"contras":["No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1203,"lon":-76.98767}},{"id":"M54","nombre":"Las Gardenias","zona":"Surco","direccion":"Las Gardenias, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150624744.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3600,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3600 + mantenimiento S/220 = S/3820 al mes.","mantenimiento":220,"gastosCierre":0,"m2Techados":100,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":9,"casa":22,"jockey":14},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Las+Gardenias,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3820 al mes, dentro del presupuesto","1 estacionamiento","100 m² para 3 dormitorios","9 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.11915,"lon":-76.97429}},{"id":"M55","nombre":"Las Gardenias","zona":"Surco","direccion":"Las Gardenias, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-147695399.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3861,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3861 + mantenimiento S/370 = S/4231 al mes.","mantenimiento":370,"gastosCierre":0,"m2Techados":125,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":9,"casa":22,"jockey":14},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Las+Gardenias,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","125 m² para 3 dormitorios","9 min al Colegio Franco Peruano"],"contras":["S/4231 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.11915,"lon":-76.97429}},{"id":"M56","nombre":"Chama","zona":"Surco","direccion":"Chama, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150455370.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2550,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2550. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":86,"m2Libres":0,"dorms":3,"banos":1,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":10,"casa":15,"jockey":18},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Chama,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2550 al mes, dentro del presupuesto","10 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.12606,"lon":-76.99653}},{"id":"M57","nombre":"Higuereta","zona":"Surco","direccion":"Higuereta, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150840148.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3000 + mantenimiento S/100 = S/3100 al mes.","mantenimiento":100,"gastosCierre":0,"m2Techados":100,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":10,"casa":16,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Higuereta,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3100 al mes, dentro del presupuesto","1 estacionamiento","100 m² para 3 dormitorios","10 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.12261,"lon":-76.99474}},{"id":"M58","nombre":"Higuereta","zona":"Surco","direccion":"Higuereta, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150921348.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3200 + mantenimiento S/100 = S/3300 al mes.","mantenimiento":100,"gastosCierre":0,"m2Techados":110,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":10,"casa":16,"jockey":16},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Higuereta,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3300 al mes, dentro del presupuesto","110 m² para 3 dormitorios","10 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.12261,"lon":-76.99474}},{"id":"M59","nombre":"Los Rosales","zona":"Surco","direccion":"Los Rosales, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-143442720.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3300,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3300 + mantenimiento S/390 = S/3690 al mes.","mantenimiento":390,"gastosCierre":0,"m2Techados":174,"m2Libres":0,"dorms":3,"banos":4,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":10,"casa":12,"jockey":23},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Los+Rosales,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3690 al mes, dentro del presupuesto","2 estacionamientos","174 m² para 3 dormitorios","10 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14296,"lon":-76.99826}},{"id":"M60","nombre":"Prolong. Benavides","zona":"Surco","direccion":"Prolong. Benavides, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150822970.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3600,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3600 + mantenimiento S/282 = S/3882 al mes.","mantenimiento":282,"gastosCierre":0,"m2Techados":172,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":10,"casa":13,"jockey":20},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Prolong.+Benavides,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3882 al mes, dentro del presupuesto","1 estacionamiento","172 m² para 3 dormitorios","10 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.13416,"lon":-77.0}},{"id":"M61","nombre":"La Cruceta","zona":"Surco","direccion":"La Cruceta, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150645635.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2000. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":71,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":11,"casa":14,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=La+Cruceta,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2000 al mes, dentro del presupuesto","11 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.15625,"lon":-76.99001}},{"id":"M62","nombre":"La Castellana","zona":"Surco","direccion":"La Castellana, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150903789.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2900,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2900 + mantenimiento S/150 = S/3050 al mes.","mantenimiento":150,"gastosCierre":0,"m2Techados":90,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":11,"casa":12,"jockey":21},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=La+Castellana,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3050 al mes, dentro del presupuesto","1 estacionamiento","11 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.13461,"lon":-77.00211}},{"id":"M63","nombre":"Tambo De Monterrico","zona":"Surco","direccion":"Tambo De Monterrico, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150752158.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4100,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4100 + mantenimiento S/250 = S/4350 al mes.","mantenimiento":250,"gastosCierre":0,"m2Techados":196,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":11,"casa":18,"jockey":14},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Tambo+De+Monterrico,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","196 m² para 3 dormitorios","11 min al Colegio Franco Peruano"],"contras":["S/4350 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.11585,"lon":-76.9922}},{"id":"M64","nombre":"Los Alamos De Monterrico","zona":"Surco","direccion":"Los Alamos De Monterrico, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150885988.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3200 + mantenimiento S/380 = S/3580 al mes.","mantenimiento":380,"gastosCierre":0,"m2Techados":79,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":13,"casa":26,"jockey":12},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Los+Alamos+De+Monterrico,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3580 al mes, dentro del presupuesto","1 estacionamiento","13 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.10842,"lon":-76.96362}},{"id":"M65","nombre":"Las Magnolias","zona":"Surco","direccion":"Las Magnolias, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150928541.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3496,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3496 + mantenimiento S/350 = S/3846 al mes.","mantenimiento":350,"gastosCierre":0,"m2Techados":73,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":13,"casa":10,"jockey":22},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Las+Magnolias,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3846 al mes, dentro del presupuesto","1 estacionamiento","13 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.13444,"lon":-77.0112}},{"id":"M66","nombre":"Los Alamos De Monterrico","zona":"Surco","direccion":"Los Alamos De Monterrico, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150644035.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4080,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4080 + mantenimiento S/520 = S/4600 al mes.","mantenimiento":520,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":13,"casa":26,"jockey":12},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Los+Alamos+De+Monterrico,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["120 m² para 3 dormitorios","13 min al Colegio Franco Peruano"],"contras":["S/4600 al mes — sobre el tope de S/4,000","Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.10842,"lon":-76.96362}},{"id":"M67","nombre":"Sagitario","zona":"Surco","direccion":"Sagitario, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149189182.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1800. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":88,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":13,"jockey":28},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Sagitario,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/1800 al mes, dentro del presupuesto","14 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.16422,"lon":-76.99527}},{"id":"M68","nombre":"Sagitario","zona":"Surco","direccion":"Sagitario, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-147267743.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1800 + mantenimiento S/160 = S/1960 al mes.","mantenimiento":160,"gastosCierre":0,"m2Techados":72,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":13,"jockey":28},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Sagitario,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/1960 al mes, dentro del presupuesto","14 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.16422,"lon":-76.99527}},{"id":"M69","nombre":"Sagitario","zona":"Surco","direccion":"Sagitario, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-145912467.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1900,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1900 + mantenimiento S/100 = S/2000 al mes.","mantenimiento":100,"gastosCierre":0,"m2Techados":95,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":13,"jockey":28},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Sagitario,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2000 al mes, dentro del presupuesto","14 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.16422,"lon":-76.99527}},{"id":"M70","nombre":"Sagitario","zona":"Surco","direccion":"Sagitario, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150592954.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1900,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1900 + mantenimiento S/180 = S/2080 al mes.","mantenimiento":180,"gastosCierre":0,"m2Techados":74,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":13,"jockey":28},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Sagitario,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2080 al mes, dentro del presupuesto","14 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.16422,"lon":-76.99527}},{"id":"M71","nombre":"Camino Real","zona":"Surco","direccion":"Camino Real, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150274930.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":1999,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/1999 + mantenimiento S/200 = S/2199 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":79,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":8,"jockey":25},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Camino+Real,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2199 al mes, dentro del presupuesto","14 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14722,"lon":-77.01099}},{"id":"M72","nombre":"Los Alamos","zona":"Surco","direccion":"Los Alamos, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-66796826.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2580,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2580 + mantenimiento S/250 = S/2830 al mes.","mantenimiento":250,"gastosCierre":0,"m2Techados":70,"m2Libres":0,"dorms":3,"banos":1,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":16,"jockey":29},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Los+Alamos,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2830 al mes, dentro del presupuesto","1 estacionamiento","14 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.166,"lon":-76.98455}},{"id":"M73","nombre":"Parque Alto","zona":"Surco","direccion":"Parque Alto, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150850484.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3800,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3800. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":65,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":14,"casa":8,"jockey":25},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Parque+Alto,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3800 al mes, dentro del presupuesto","1 estacionamiento","14 min al Colegio Franco Peruano"],"contras":["No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14483,"lon":-77.01169}},{"id":"M74","nombre":"El Derby","zona":"Surco","direccion":"El Derby, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150945780.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4032,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4032 + mantenimiento S/395 = S/4427 al mes.","mantenimiento":395,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":15,"casa":25,"jockey":8},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=El+Derby,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","120 m² para 3 dormitorios","15 min al Colegio Franco Peruano"],"contras":["S/4427 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.09857,"lon":-76.97792}},{"id":"M75","nombre":"El Derby","zona":"Surco","direccion":"El Derby, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150872080.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4000 + mantenimiento S/450 = S/4450 al mes.","mantenimiento":450,"gastosCierre":0,"m2Techados":105,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":2,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":15,"casa":25,"jockey":8},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=El+Derby,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["2 estacionamientos","105 m² para 3 dormitorios","15 min al Colegio Franco Peruano"],"contras":["S/4450 al mes — sobre el tope de S/4,000","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.09857,"lon":-76.97792}},{"id":"M76","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150659755.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2200,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2200 + mantenimiento S/300 = S/2500 al mes.","mantenimiento":300,"gastosCierre":0,"m2Techados":72,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2500 al mes, dentro del presupuesto","16 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M77","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150917884.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2300,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2300 + mantenimiento S/200 = S/2500 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":72,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2500 al mes, dentro del presupuesto","16 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M78","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150793115.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2600,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2600 + mantenimiento S/10 = S/2610 al mes.","mantenimiento":10,"gastosCierre":0,"m2Techados":100,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2610 al mes, dentro del presupuesto","1 estacionamiento","100 m² para 3 dormitorios","16 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M79","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150903510.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":2500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/2500 + mantenimiento S/200 = S/2700 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":70,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/2700 al mes, dentro del presupuesto","16 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M80","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150451847.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3070,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3070 + mantenimiento S/300 = S/3370 al mes.","mantenimiento":300,"gastosCierre":0,"m2Techados":71,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3370 al mes, dentro del presupuesto","16 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M81","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150845928.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3400,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3400. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":85,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3400 al mes, dentro del presupuesto","1 estacionamiento","16 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M82","nombre":"Tiravanti","zona":"Barranco","direccion":"Tiravanti, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150606083.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3225,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3225 + mantenimiento S/200 = S/3425 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":140,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Tiravanti,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3425 al mes, dentro del presupuesto","140 m² para 3 dormitorios","16 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M83","nombre":"Monterrico","zona":"Surco","direccion":"Monterrico, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150952223.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3300,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3300 + mantenimiento S/185 = S/3485 al mes.","mantenimiento":185,"gastosCierre":0,"m2Techados":100,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":28,"jockey":8},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Monterrico,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3485 al mes, dentro del presupuesto","1 estacionamiento","100 m² para 3 dormitorios","16 min al Colegio Franco Peruano"],"contras":["Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.09502,"lon":-76.96964}},{"id":"M84","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150939420.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3500. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":83,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3500 al mes, dentro del presupuesto","1 estacionamiento","16 min al Colegio Franco Peruano"],"contras":["El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M85","nombre":"Monterrico","zona":"Surco","direccion":"Monterrico, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-147791695.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3500 + mantenimiento S/350 = S/3850 al mes.","mantenimiento":350,"gastosCierre":0,"m2Techados":85,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":28,"jockey":8},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Monterrico,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["S/3850 al mes, dentro del presupuesto","16 min al Colegio Franco Peruano"],"contras":["Sin estacionamiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.09502,"lon":-76.96964}},{"id":"M86","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150273395.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4000,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4000 + mantenimiento S/200 = S/4200 al mes.","mantenimiento":200,"gastosCierre":0,"m2Techados":141,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","141 m² para 3 dormitorios","16 min al Colegio Franco Peruano"],"contras":["S/4200 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M87","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150774522.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3850,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3850 + mantenimiento S/350 = S/4200 al mes.","mantenimiento":350,"gastosCierre":0,"m2Techados":97,"m2Libres":0,"dorms":3,"banos":2,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":16,"casa":7,"jockey":26},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","16 min al Colegio Franco Peruano"],"contras":["S/4200 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.14396,"lon":-77.02027}},{"id":"M88","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-150902934.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":3688,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/3688 + mantenimiento S/550 = S/4238 al mes.","mantenimiento":550,"gastosCierre":0,"m2Techados":108,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":18,"casa":13,"jockey":22},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","108 m² para 3 dormitorios","18 min al Colegio Franco Peruano"],"contras":["S/4238 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1215,"lon":-77.02591}},{"id":"M89","nombre":"Barranco (sin urb.)","zona":"Barranco","direccion":"Barranco, Barranco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149964533.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4500,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4500. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":116,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":1,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":18,"casa":13,"jockey":22},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Barranco,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["1 estacionamiento","116 m² para 3 dormitorios","18 min al Colegio Franco Peruano"],"contras":["S/4500 al mes — sobre el tope de S/4,000","El aviso solo declara el distrito: la distancia al colegio es aproximada","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.1215,"lon":-77.02591}},{"id":"M90","nombre":"Santa Constanza","zona":"Surco","direccion":"Santa Constanza, Surco","estado":"por_ver","quien":"Radar","fuente":"Adondevivir","url":"https://www.adondevivir.com/propiedades/clasificado/x-149604014.html","agregado":"2026-08-31","cita":"","contacto":"por confirmar en el aviso","precio":4590,"precioEst":null,"precioDep":null,"incluye":"Alquiler S/4590. El aviso NO declara mantenimiento — el total real va a ser mayor.","mantenimiento":null,"gastosCierre":0,"m2Techados":120,"m2Libres":0,"dorms":3,"banos":3,"medioBano":false,"piso":null,"ascensores":null,"estreno":false,"antiguedad":null,"entrega":"inmediata","entregaNota":"Disponibilidad por confirmar con el anunciante.","estacionamientos":0,"deposito":null,"orientacion":"por confirmar","luz":null,"vista":"por confirmar","balcon":false,"commute":{"colegio":20,"casa":29,"jockey":5},"caminando":"","fotos":[],"maps":"https://www.google.com/maps/dir/?api=1&origin=Santa+Constanza,+Lima&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco,+Lima","rating":{"mara":0,"rodrigo":0},"notas":{"mara":"","rodrigo":""},"pros":["120 m² para 3 dormitorios","20 min al Colegio Franco Peruano"],"contras":["S/4590 al mes — sobre el tope de S/4,000","Sin estacionamiento","No declara mantenimiento","Sin visitar y sin confirmar por teléfono"],"geo":{"lat":-12.08294,"lon":-76.97707}}]
+/* DATOS>>> */
+
+/* ============ configuración de pipeline y criterios ============ */
+const ESTADOS = [
+  {k:"por_ver",   label:"Por ver",       color:"var(--muted)"},
+  {k:"contactado",label:"Contactado",    color:"var(--s1)"},
+  {k:"cita",      label:"Cita agendada", color:"var(--warning)"},
+  {k:"visitado",  label:"Visitado",      color:"var(--s2)"},
+  {k:"finalista", label:"Finalista",     color:"var(--good)"},
+  {k:"descartado",label:"Descartado",    color:"var(--axis)"}
+];
+const estadoInfo = k => ESTADOS.find(e=>e.k===k) || ESTADOS[0];
+
+const CRITERIOS = [
+{k:'precio',label:'Alquiler total',peso:30,dir:'min',val:d=>(d.precio||0)+(d.mantenimiento||0)},
+{k:'commute',label:'Cerca del colegio',peso:30,dir:'min',val:d=>d.commute&&d.commute.colegio},
+{k:'area',label:'Área',peso:15,dir:'max',val:d=>d.m2Techados},
+{k:'distrib',label:'Distribución',peso:10,dir:'max',val:d=>(d.dorms||0)+(d.banos||0)*0.5+(d.estacionamientos||0)},
+{k:'luz',label:'Luz y vista',peso:5,dir:'max',val:d=>d.luz},
+{k:'gusto',label:'Rating de Mara',peso:10,dir:'max',val:d=>d.rating&&d.rating.mara},
+{k:'entrega',label:'Disponible ya',peso:0,dir:'max',val:d=>1}
+];
+
+/* Disponible: "inmediata" o "AAAA-MM" (ej. "2027-06"). Devuelve etiqueta, meses de espera y color. */
+const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
+function entregaInfo(d){
+  const e = d.entrega;
+  if(!e) return {label:"Sin dato", corto:"—", meses:null, color:"var(--muted)"};
+  if(e==="inmediata") return {label:"Inmediata", corto:"Inmediata", meses:0, color:"var(--good)"};
+  const [y,m] = e.split("-").map(Number);
+  const hoy = new Date(), meses = (y-hoy.getFullYear())*12 + (m-1-hoy.getMonth());
+  const corto = `${MESES[m-1]} ${y}`;
+  if(meses<=0) return {label:`${corto} (ya vencida)`, corto, meses, color:"var(--warning)"};
+  const color = meses<=6 ? "var(--warning)" : meses<=12 ? "var(--serious)" : "var(--critical)";
+  return {label:`${corto} · en ${meses} ${meses===1?"mes":"meses"}`, corto, meses, color};
+}
+
+// precio "todo incluido": depa + estacionamiento + depósito (lo que cuenta contra el tope)
+const precioTodo = d => d.precio==null ? null : d.precio + (d.precioEst||0) + (d.precioDep||0);
+const costoTotal = d => d.precio==null ? null : precioTodo(d) + (d.gastosCierre||0);
+const sobreTope  = d => d.precio!=null && precioTodo(d) > BUDGET.max;
+const enLimite   = d => d.precio!=null && precioTodo(d) > BUDGET.ok && precioTodo(d) <= BUDGET.max;
+function topeInfo(d){
+  if(d.precio==null) return {clase:"", txt:"?", label:"Precio por confirmar", color:"var(--muted)"};
+  const p = precioTodo(d), delta = p - BUDGET.max;
+  if(p > BUDGET.max) return {clase:"worst", txt:"+"+fmtK(delta).replace("S/ ",""), label:"Sobre el tope", color:"var(--critical)"};
+  if(p > BUDGET.ok)  return {clase:"", txt:"en el límite", label:"En el límite", color:"var(--warning)"};
+  return {clase:"best", txt:"−"+fmtK(BUDGET.ok-p).replace("S/ ",""), label:"Dentro del tope", color:"var(--good)"};
+}
+const precioM2  = d => d.precio==null ? null : d.precio / d.m2Techados;
+const fmtUSD = n => "S/ " + Math.round(n).toLocaleString("es-PE");
+const fmtK   = n => "S/ " + (n/1000).toFixed(0) + "k";
+const fmtPEN = n => "S/ " + Math.round(n).toLocaleString("es-PE");
+const min = v => typeof v==="number" ? v+" min" : `<span style="color:var(--muted)">por confirmar</span>`;
+const pend = t => `<span style="color:var(--muted)">${t}</span>`;
+const pisoTxt = d => (typeof d.piso==="number" ? d.piso+"°" : pend("piso ?"))
+                   + " · " + (typeof d.ascensores==="number" ? d.ascensores+" asc." : pend("asc. ?"));
+const estrellas = n => n>0 ? "★".repeat(n)+"☆".repeat(5-n) : pend("sin calificar");
+const luzTxt = d => (d.orientacion && d.orientacion!=="por confirmar" ? d.orientacion : pend("orientación ?"))
+                  + " · " + (typeof d.luz==="number" && d.luz>0 ? "★".repeat(d.luz) : pend("luz ?"));
+
+/* ============ estado de la app ============ */
+const S = {view:"pipeline", sel:new Set(), sort:{k:"score",dir:-1},
+           f:{q:"",zona:"",dorm:"",precio:"",entrega:"",quien:"",tope:false,medio:false,estreno:false,activos:true}};
+
+function scores(list0){
+  let list = list0;
+  const norm = {}, vacio = {};
+  // el score es relativo al set: con un solo depa no hay contra qué compararlo
+  const conPrecio = list.filter(d=>d.precio!=null);
+  list.filter(d=>d.precio==null).forEach(d=>vacio[d.id]=null);
+  if(conPrecio.length < 2){ list.forEach(d=>vacio[d.id]=null); return vacio; }
+  list = conPrecio;
+  CRITERIOS.forEach(c=>{
+    const vals = list.map(c.val);
+    const min = Math.min(...vals), max = Math.max(...vals), span = (max-min)||1;
+    norm[c.k] = d => c.dir>0 ? (c.val(d)-min)/span : (max-c.val(d))/span;
+  });
+  const total = CRITERIOS.reduce((a,c)=>a+c.peso,0)||1;
+  const out = {};
+  list.forEach(d=>{ out[d.id] = Math.round(CRITERIOS.reduce((a,c)=>a+c.peso*norm[c.k](d),0)/total*100); });
+  return out;
+}
+
+function visibles(){
+  const f = S.f, q = f.q.toLowerCase();
+  return DEPAS.filter(d=>{
+    if(f.activos && d.estado==="descartado") return false;
+    if(f.zona && d.zona!==f.zona) return false;
+    if(f.dorm && String(d.dorms)!==f.dorm) return false;
+    if(f.precio && precioTodo(d)>+f.precio) return false;
+    if(f.tope && sobreTope(d)) return false;
+    if(f.entrega!==""){ const m=entregaInfo(d).meses; if(m==null || m>+f.entrega) return false; }
+    if(f.quien && d.quien!==f.quien) return false;
+    if(f.medio && !d.medioBano) return false;
+    if(f.estreno && !d.estreno) return false;
+    if(q && !(d.nombre+" "+d.zona+" "+d.direccion+" "+d.contacto+" "+d.fuente).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+/* ============ pipeline ============ */
+function renderBoard(){
+  const list = visibles(), sc = scores(DEPAS), board = document.getElementById("board");
+  board.innerHTML = ESTADOS.map(e=>{
+    const items = list.filter(d=>d.estado===e.k);
+    return `<div class="col"><h3><span class="dot" style="background:${e.color}"></span>${e.label}<span class="n">${items.length}</span></h3>
+      ${items.map(d=>cardHTML(d,sc[d.id])).join("") || `<div class="vacia" style="font-size:12px;color:var(--muted);padding:4px 2px">—</div>`}</div>`;
+  }).join("");
+  board.querySelectorAll("[data-open]").forEach(el=>el.onclick=()=>abrir(el.dataset.open));
+}
+function thumbHTML(d){ return d.fotos && d.fotos[0]
+  ? `<div class="thumb" style="background-image:url('${d.fotos[0]}')"></div>`
+  : `<div class="thumb nofoto">sin fotos</div>`; }
+function cardHTML(d,s){
+  const t = topeInfo(d), en = entregaInfo(d), extra = (d.precioEst||0)+(d.precioDep||0);
+  return `<div class="card ${sobreTope(d)?"over":""}" data-open="${d.id}">
+    ${thumbHTML(d)}
+    <div class="body">
+      <div class="t">${d.nombre}</div>
+      <div class="z">${d.zona} · ${d.dorms}D ${typeof d.banos==="number"?d.banos+"B":"?B"}${d.medioBano===true?" + ½":""}</div>
+      <div class="row"><span class="p">${d.precio==null?pend("precio por confirmar"):fmtK(precioTodo(d))}</span><span class="pm">${d.precio==null?"":Math.round(precioM2(d))+"/m² · "}${d.m2Techados} m²</span></div>
+      ${extra?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtK(d.precio)} + ${fmtK(extra)} est./dep.</div>`:""}
+      <div class="mini">
+        <span class="tag" style="color:${t.color};border:1px solid ${t.color};background:transparent">${t.label}</span>
+        <span class="tag" style="color:${en.color};border:1px solid ${en.color};background:transparent">🔑 ${en.corto}</span>
+        ${d.cita?`<span class="tag">📅 ${d.cita.slice(5).replace("-","/")}</span>`:""}
+        ${d.estreno?`<span class="tag">estreno</span>`:""}
+        <span class="tag who">${d.quien}</span>
+      </div>
+      ${s==null?"":`<div class="scorebar" title="Score ${s}"><i style="width:${s}%"></i></div>`}
+    </div></div>`;
+}
+
+/* ============ tabla ============ */
+const COLS = [
+  {k:"chk",   label:"",           num:false},
+  {k:"nombre",label:"Depa",       num:false, v:d=>`<b>${d.nombre}</b><br><span style="color:var(--muted);font-size:11.5px">${d.zona}</span>`},
+  {k:"estado",label:"Estado",     num:false, v:d=>`<span class="stt"><i style="background:${estadoInfo(d.estado).color}"></i>${estadoInfo(d.estado).label}</span>`},
+  {k:"precio",label:"Alquiler",       num:true,  s:d=>d.precio??1e9, v:d=>d.precio==null?pend("—"):fmtUSD(d.precio)},
+  {k:"extra", label:"—",num:true,  s:d=>(d.precioEst||0)+(d.precioDep||0),
+              v:d=>{if(d.precioEst==null&&d.precioDep==null) return pend("por confirmar");
+              const e=(d.precioEst||0)+(d.precioDep||0); return e? fmtUSD(e) : `<span style="color:var(--good)">incluido</span>`;}},
+  {k:"todo",  label:"Alq.+mant.", num:true,  s:d=>precioTodo(d), v:d=>{const t=topeInfo(d);
+              return `<b style="color:${t.color}">${d.precio==null?"por confirmar":fmtUSD(precioTodo(d))}</b>`;}},
+  {k:"vs",    label:"vs. tope",   num:true,  s:d=>precioTodo(d)-BUDGET.max, v:d=>{const t=topeInfo(d);
+              return `<span style="color:${t.color}">${t.txt}</span>`;}},
+  {k:"pm2",   label:"S/ por m²",     num:true,  s:d=>precioM2(d)??1e9, v:d=>d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE"), best:"min"},
+  {k:"total", label:"Total mes", num:true,  s:d=>costoTotal(d)??1e9, v:d=>d.precio==null?pend("—"):fmtUSD(costoTotal(d)), best:"min"},
+  {k:"mant",  label:"Mant.",      num:true,  s:d=>d.mantenimiento??99999, v:d=>d.mantenimiento?fmtPEN(d.mantenimiento):pend("?"), best:"min"},
+  {k:"m2",    label:"m² tech.",   num:true,  s:d=>d.m2Techados, v:d=>d.m2Techados, best:"max"},
+  {k:"dorms", label:"Dorm",       num:true,  s:d=>d.dorms, v:d=>d.dorms},
+  {k:"banos", label:"Baños",      num:true,  s:d=>d.banos??0, v:d=>(typeof d.banos==="number"?d.banos:pend("?")) + (d.medioBano===true?" + ½":d.medioBano===null?" + ½?":"")},
+  {k:"est",   label:"Estac.",     num:true,  s:d=>d.estacionamientos??0, v:d=>(typeof d.estacionamientos==="number"?d.estacionamientos:pend("?")) + (d.deposito===true?" + dep":"")},
+  {k:"piso",  label:"Piso",       num:true,  s:d=>d.piso??999, v:d=>pisoTxt(d)},
+  {k:"entr",  label:"Disponible",    num:false, s:d=>{const m=entregaInfo(d).meses; return m==null?999:m;},
+              v:d=>{const e=entregaInfo(d); return `<span style="color:${e.color}">${e.label}</span>`;}},
+  {k:"luz",   label:"Luz",        num:true,  s:d=>d.luz??0, v:d=>typeof d.luz==="number"&&d.luz>0?"★".repeat(d.luz):pend("?")},
+  {k:"comm",  label:"Colegio/Casa/Jockey",num:true, s:d=>DESTINOS.reduce((a,x)=>a+(d.commute[x.k]??99),0),
+              v:d=>DESTINOS.map(x=>typeof d.commute[x.k]==="number"?d.commute[x.k]+"′":"?").join(" / ")},
+  {k:"quien", label:"Lo mandó",   num:false, v:d=>d.quien},
+  {k:"score", label:"Score",      num:true,  s:d=>0, v:d=>0, best:"max"}
+];
+function renderTable(){
+  const list = visibles(), sc = scores(DEPAS);
+  const col = COLS.find(c=>c.k===S.sort.k);
+  const keyf = S.sort.k==="score" ? (d=>sc[d.id]) : (col && col.s ? col.s : (d=>d.nombre));
+  const rows = [...list].sort((a,b)=>{const x=keyf(a),y=keyf(b);return (x>y?1:x<y?-1:0)*S.sort.dir;});
+  const bestOf = {};
+  COLS.filter(c=>c.best).forEach(c=>{
+    const f = c.k==="score"?(d=>sc[d.id]):c.s;
+    const vals = rows.map(f); if(!vals.length) return;
+    bestOf[c.k] = c.best==="min" ? Math.min(...vals) : Math.max(...vals);
+  });
+  document.querySelector("#tbl thead").innerHTML = "<tr>"+COLS.map(c=>
+    `<th class="${c.num?'num':''}" data-sort="${c.k}">${c.label}${S.sort.k===c.k?(S.sort.dir>0?" ↑":" ↓"):""}</th>`).join("")+"</tr>";
+  document.querySelector("#tbl tbody").innerHTML = rows.map(d=>"<tr data-open='"+d.id+"'>"+COLS.map(c=>{
+    if(c.k==="chk") return `<td><input class="chk" type="checkbox" data-sel="${d.id}" ${S.sel.has(d.id)?"checked":""}></td>`;
+    const raw = c.k==="score"? sc[d.id] : (c.s?c.s(d):null);
+    const isBest = c.best && raw===bestOf[c.k];
+    const val = c.k==="score" ? (sc[d.id]??"—") : c.v(d);
+    return `<td class="${c.num?'num':''} ${isBest?'best':''}">${val}</td>`;
+  }).join("")+"</tr>").join("");
+  document.querySelectorAll("#tbl th").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.sort; S.sort = {k, dir: S.sort.k===k ? -S.sort.dir : (COLS.find(c=>c.k===k)?.num?-1:1)}; renderTable();
+  });
+  document.querySelectorAll("[data-sel]").forEach(cb=>cb.onclick=ev=>{
+    ev.stopPropagation();
+    const id=cb.dataset.sel;
+    if(cb.checked){ if(S.sel.size>=4){cb.checked=false; return;} S.sel.add(id);} else S.sel.delete(id);
+  });
+  document.querySelectorAll("#tbl tbody tr").forEach(tr=>tr.onclick=()=>abrir(tr.dataset.open));
+}
+
+/* ============ cara a cara ============ */
+const FILAS = [
+  ["Precio del depa",      d=>d.precio==null?pend("por confirmar"):fmtUSD(d.precio)],
+  ["Estacionamiento + depósito", d=>{if(d.precioEst==null&&d.precioDep==null) return pend("por confirmar");
+        const e=(d.precioEst||0)+(d.precioDep||0); return e?fmtUSD(e):"incluido";}],
+  ["Precio todo incluido", d=>{const t=topeInfo(d); return `<b style="color:${t.color}">${d.precio==null?"por confirmar":fmtUSD(precioTodo(d))}</b>`;}],
+  ["vs. tope de 320k",     d=>{const t=topeInfo(d); return `<span style="color:${t.color}">${t.label}</span>`;}],
+  ["Gastos de cierre",     d=>fmtUSD(d.gastosCierre||0)],
+  ["Desembolso total",     d=>d.precio==null?pend("por confirmar"):fmtUSD(costoTotal(d))],
+  ["S/ por m² (depa)",    d=>d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")],
+  ["Mantenimiento",        d=>d.mantenimiento?fmtPEN(d.mantenimiento)+" / mes":pend("no publicado")],
+  ["m² techados / libres", d=>`${d.m2Techados} / ${d.m2Libres||0}`],
+  ["Dormitorios",          d=>d.dorms],
+  ["Baños completos",      d=>typeof d.banos==="number"?d.banos:pend("por confirmar")],
+  ["½ baño de visita",     d=>d.medioBano===true?"Sí":d.medioBano===false?"No":pend("por confirmar")],
+  ["Estacionamiento",      d=>(typeof d.estacionamientos==="number"?d.estacionamientos:pend("?")) + (d.deposito===true?" + depósito":d.deposito===false?" · sin depósito":" · depósito por confirmar")],
+  ["Piso / ascensores",    d=>pisoTxt(d)],
+  ["Estreno",              d=>d.estreno?"Sí":`No · ${d.antiguedad} años`],
+  ["Fecha de entrega",     d=>{const e=entregaInfo(d); return `<b style="color:${e.color}">${e.label}</b>`;}],
+  ["Detalle de entrega",   d=>d.entregaNota||"—"],
+  ["Orientación / luz",    d=>luzTxt(d)],
+  ["Vista",                d=>d.vista],
+  ["Balcón / terraza",     d=>d.balcon===true?"Sí":d.balcon===false?"No":pend("por confirmar")],
+  ["A Smartfit",           d=>min(d.commute.smartfit)],
+  ["Al supermercado",      d=>min(d.commute.super)],
+  ["Al Centro de la zona",  d=>min(d.commute.malecon)],
+  ["Caminando",            d=>d.caminando],
+  ["Rating Rodrigo",       d=>estrellas(d.rating.rodrigo)],
+  ["Rating Francisco",          d=>estrellas(d.rating.mama)],
+  ["Estado",               d=>estadoInfo(d.estado).label]
+];
+function renderCmp(){
+  const sc = scores(DEPAS);
+  let list = DEPAS.filter(d=>S.sel.has(d.id));
+  if(!list.length) list = [...visibles()].sort((a,b)=>sc[b.id]-sc[a.id]).slice(0,3);
+  const el = document.getElementById("cmp");
+  if(!list.length){ el.innerHTML = `<div class="hint">Sin departamentos que mostrar.</div>`; return; }
+  el.className="cmp"; el.style.setProperty("--n", list.length);
+  let html = `<div class="cell head"></div>` + list.map(d=>`<div class="cell head">
+      ${d.fotos&&d.fotos[0]?`<img src="${d.fotos[0]}" alt="" referrerpolicy="no-referrer" onerror="this.classList.add('rota');this.removeAttribute('src')">`:`<div style="height:110px;border-radius:9px;background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;margin-bottom:7px">sin fotos</div>`}
+      <b>${d.nombre}</b><div style="color:var(--muted);font-size:12px">${d.zona} · score ${sc[d.id]??"—"}</div></div>`).join("");
+  FILAS.forEach(([label,f])=>{
+    html += `<div class="cell h">${label}</div>` + list.map(d=>`<div class="cell">${f(d)}</div>`).join("");
+  });
+  html += `<div class="cell h">Notas</div>` + list.map(d=>
+    `<div class="cell" style="white-space:normal;font-size:12.5px;color:var(--ink-2)">${d.notas.rodrigo||"—"}</div>`).join("");
+  el.innerHTML = html;
+}
+
+/* ============ scatter ============ */
+function renderScatter(){
+  const list = visibles().filter(d=>d.precio!=null); const host = document.getElementById("scatter");
+  if(list.length<1){host.innerHTML=`<div class="hint">Sin datos.</div>`;return;}
+  const W=Math.min(host.clientWidth||860,1100), H=380, M={t:14,r:26,b:44,l:64};
+  const xs=list.map(d=>d.m2Techados), ys=list.map(d=>precioTodo(d));
+  const pad=(a,p)=>{const mn=Math.min(...a),mx=Math.max(...a),s=(mx-mn)||mx*0.2||1;return [mn-s*p,mx+s*p];};
+  let [x0,x1]=pad(xs,.18), [y0,y1]=pad(ys,.18);
+  y1=Math.max(y1,BUDGET.max*1.03); y0=Math.min(y0,BUDGET.ok*0.94);
+  const X=v=>M.l+(v-x0)/(x1-x0)*(W-M.l-M.r), Y=v=>H-M.b-(v-y0)/(y1-y0)*(H-M.t-M.b);
+  const avg = ys.reduce((a,b)=>a+b,0)/xs.reduce((a,b)=>a+b,0);
+  const tick=(a,b,n)=>{const st=(b-a)/n;return Array.from({length:n+1},(_,i)=>a+st*i);};
+  const colorOf=d=>d.estado==="finalista"?"var(--good)":d.estado==="descartado"?"var(--muted)":"var(--s1)";
+  let g="";
+  tick(y0,y1,4).forEach(v=>{g+=`<line x1="${M.l}" x2="${W-M.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)" stroke-width="1"/>
+    <text x="${M.l-10}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtK(v)}</text>`;});
+  tick(x0,x1,5).forEach(v=>{g+=`<text x="${X(v)}" y="${H-M.b+18}" text-anchor="middle" font-size="11" fill="var(--muted)">${Math.round(v)}</text>`;});
+  g+=`<line x1="${M.l}" x2="${W-M.r}" y1="${H-M.b}" y2="${H-M.b}" stroke="var(--axis)" stroke-width="1"/>`;
+  // banda fuera de presupuesto
+  const yTope=Y(BUDGET.max);
+  if(yTope>M.t){
+    g+=`<rect x="${M.l}" y="${M.t}" width="${W-M.l-M.r}" height="${Math.max(0,yTope-M.t)}" fill="var(--critical)" opacity="0.07"/>
+        <line x1="${M.l}" x2="${W-M.r}" y1="${yTope}" y2="${yTope}" stroke="var(--critical)" stroke-width="2"/>
+        <text x="${M.l+8}" y="${yTope-7}" font-size="11.5" fill="var(--critical)">tope ${fmtK(BUDGET.max)} · todo incluido</text>`;
+  }
+  g+=`<line x1="${M.l}" x2="${W-M.r}" y1="${Y(BUDGET.ok)}" y2="${Y(BUDGET.ok)}" stroke="var(--good)" stroke-width="2" stroke-dasharray="3 4" opacity="0.8"/>
+      <text x="${M.l+8}" y="${Y(BUDGET.ok)-7}" font-size="11.5" fill="var(--good)">cómodo ${fmtK(BUDGET.ok)}</text>`;
+  const ax0=Math.max(x0,y0/avg), ax1=Math.min(x1,y1/avg);
+  g+=`<line x1="${X(ax0)}" y1="${Y(ax0*avg)}" x2="${X(ax1)}" y2="${Y(ax1*avg)}" stroke="var(--axis)" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="${X(ax0)+8}" y="${Y(ax0*avg)+16}" text-anchor="start" font-size="11" fill="var(--muted)">promedio del set: ${Math.round(avg).toLocaleString("es-PE")} S/ por m²</text>`;
+  // etiquetas selectivas: los 4 mejores S/ por m², el peor, y los finalistas. El resto, al hover.
+  const orden=[...list].sort((a,b)=>precioM2(a)-precioM2(b));
+  const etiquetar=new Set([...orden.slice(0,4), orden[orden.length-1],
+                           ...list.filter(d=>d.estado==="finalista")].filter(Boolean).map(d=>d.id));
+  list.forEach(d=>{
+    const px=X(d.m2Techados), py=Y(precioTodo(d));
+    g+=`<g class="pt" data-id="${d.id}" style="cursor:pointer">
+      <circle cx="${px}" cy="${py}" r="7" fill="${colorOf(d)}" stroke="var(--surface-1)" stroke-width="2"/>
+      ${etiquetar.has(d.id)?`<text x="${px}" y="${py-13}" text-anchor="middle" font-size="11.5" fill="var(--ink-2)">${d.nombre.slice(0,26)}</text>`:``}</g>`;
+  });
+  g+=`<text x="${M.l+(W-M.l-M.r)/2}" y="${H-6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">m² techados</text>`;
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img">${g}</svg>`;
+  const tip=document.getElementById("tip");
+  host.querySelectorAll(".pt").forEach(p=>{
+    const d=DEPAS.find(x=>x.id===p.dataset.id);
+    p.onmousemove=e=>{tip.style.opacity=1;tip.style.left=(e.clientX+14)+"px";tip.style.top=(e.clientY+14)+"px";
+      tip.innerHTML=`<b>${d.nombre}</b><br>${fmtUSD(precioTodo(d))} todo incluido · ${d.m2Techados} m²<br>${Math.round(precioM2(d)).toLocaleString("es-PE")} S/ por m² · ${topeInfo(d).label}`;};
+    p.onmouseleave=()=>tip.style.opacity=0;
+    p.onclick=()=>abrir(d.id);
+  });
+}
+
+/* ============ mapa ============ */
+const RAMPA = ["#86b6ef","#5598e7","#2a78d6","#1c5cab","#104281"]; // azul secuencial, claro→oscuro
+const REFS = [{n:"Parque principal", g:[-12.1180,-76.9960]}];
+let MAPA = null, CAPA = null;
+
+function renderMapa(){
+  const list = visibles().filter(d=>d.geo && d.precio!=null);
+  const sin  = visibles().filter(d=>!d.geo);
+  if(typeof L === "undefined"){ planoSimple(list, sin); return; }
+
+  if(!MAPA){
+    MAPA = L.map("map",{scrollWheelZoom:false}).setView([-12.128,-77.030], 14);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      {maxZoom:19, attribution:'© OpenStreetMap · © CARTO'}).addTo(MAPA);
+    MAPA.on("click", ()=>MAPA.scrollWheelZoom.enable());
+  }
+  if(CAPA) MAPA.removeLayer(CAPA);
+  CAPA = L.layerGroup().addTo(MAPA);
+
+  // bandas de precio por m² — SOLO sobre los que tienen precio.
+  // Si se cuela un null, Math.min lo convierte en 0 y descuadra toda la escala.
+  const pm = list.filter(d=>precioM2(d)!=null).map(precioM2);
+  const min = pm.length?Math.min(...pm):0, max = pm.length?Math.max(...pm):1, paso = ((max-min)||1)/5;
+  const banda = d => Math.min(4, Math.max(0, Math.floor((precioM2(d)-min)/paso)));
+
+  REFS.forEach(r=>{
+    L.marker(r.g, {icon: L.divIcon({className:"", iconSize:[16,16],
+      html:`<div style="width:14px;height:14px;background:var(--good);border:2px solid #fff;
+             transform:rotate(45deg);box-shadow:0 1px 4px rgba(0,0,0,.35)"></div>`})})
+     .bindTooltip(r.n,{permanent:true,direction:"right",className:"mk-lbl",offset:[10,0]})
+     .addTo(CAPA);
+  });
+
+  list.forEach(d=>{
+    const t = topeInfo(d);
+    const sinPrecio = d.precio==null;
+    L.circleMarker(d.geo, sinPrecio
+        ? {radius:9, color:"var(--muted)", weight:3, dashArray:"3 3", fillColor:"var(--surface-1)", fillOpacity:1}
+        : {radius:9, color:"#fff", weight:2, fillColor:RAMPA[banda(d)], fillOpacity:1})
+     .bindPopup(
+       `<b>${d.nombre}</b><br>`+
+       (d.precio==null
+          ? `<b style="color:#a33">Sin precio publicado</b> · ${d.m2Techados} m²<br>`
+          : `${fmtUSD(precioTodo(d))} · ${d.m2Techados} m² · <b>${Math.round(precioM2(d)).toLocaleString("es-PE")} S/ por m²</b><br>`)+
+       `<span class="pz">${d.dorms}D ${d.banos}B · ${d.antiguedad} años · ${estadoInfo(d.estado).label}</span><br>`+
+       `<a href="#" onclick="abrir('${d.id}');return false">Ver ficha</a> · `+
+       `<a href="${d.maps}" target="_blank" rel="noopener">Maps ↗</a>`)
+     .addTo(CAPA);
+  });
+
+  if(list.length){
+    const b = L.latLngBounds(list.map(d=>d.geo).concat(REFS.map(r=>r.g)));
+    MAPA.fitBounds(b, {padding:[42,42], maxZoom:15});
+  }
+  setTimeout(()=>MAPA.invalidateSize(), 60);
+
+  const nSin = list.filter(d=>d.precio==null).length;
+  document.getElementById("mapleg").innerHTML =
+    `<span style="color:var(--muted)">S/ por m²:</span>` +
+    RAMPA.map((c,i)=>`<span><i style="background:${c}"></i>${Math.round(min+paso*i).toLocaleString("es-PE")}${i===4?"+":""}</span>`).join("") +
+    (nSin?`<span><i style="background:var(--surface-1);border:2px dashed var(--muted)"></i>sin precio (${nSin})</span>`:"") +
+    `<span><i style="background:var(--good);border-radius:2px"></i>referencia</span>`;
+  document.getElementById("sinubicar").textContent = sin.length
+    ? `Sin ubicar en el mapa: ${sin.map(d=>d.nombre).join(", ")} — la dirección del aviso es demasiado vaga para geolocalizarla.`
+    : "";
+}
+
+/* Plano de respaldo: si Leaflet no carga (sin internet), dibuja las posiciones
+   relativas en SVG. No tiene calles, pero se ve dónde está cada uno respecto al resto. */
+function planoSimple(list, sin){
+  const host=document.getElementById("map");
+  if(!list.length){ host.innerHTML=`<div class="hint">Sin depas ubicados.</div>`; return; }
+  const pts=list.map(d=>({d, la:d.geo[0], lo:d.geo[1]})).concat(REFS.map(r=>({ref:r, la:r.g[0], lo:r.g[1]})));
+  const las=pts.map(p=>p.la), los=pts.map(p=>p.lo);
+  const W=host.clientWidth||900, H=540, M=26;
+  const la0=Math.min(...las), la1=Math.max(...las), lo0=Math.min(...los), lo1=Math.max(...los);
+  const dla=(la1-la0)||.01, dlo=(lo1-lo0)||.01;
+  const X=lo=>M+(lo-lo0)/dlo*(W-2*M), Y=la=>H-M-(la-la0)/dla*(H-2*M); // norte arriba
+  const pmv=list.filter(d=>precioM2(d)!=null).map(precioM2);
+  const mn=pmv.length?Math.min(...pmv):0, mx=pmv.length?Math.max(...pmv):1, paso=((mx-mn)||1)/5;
+  const banda=d=>Math.min(4,Math.max(0,Math.floor((precioM2(d)-mn)/paso)));
+  let g=`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--chip)" rx="10"/>`;
+  g+=`<text x="${M}" y="${M}" font-size="11" fill="var(--muted)">↑ norte · plano sin calles (el mapa con calles necesita internet)</text>`;
+  REFS.forEach(r=>{ g+=`<g transform="translate(${X(r.g[1])},${Y(r.g[0])}) rotate(45)">
+      <rect x="-7" y="-7" width="14" height="14" fill="var(--good)" stroke="var(--surface-1)" stroke-width="2"/></g>
+      <text x="${X(r.g[1])+13}" y="${Y(r.g[0])+4}" font-size="11.5" fill="var(--ink-2)">${r.n}</text>`; });
+  const orden=[...list].sort((a,b)=>precioM2(a)-precioM2(b));
+  const rotular=new Set([...orden.slice(0,3), orden[orden.length-1]].filter(Boolean).map(d=>d.id));
+  list.forEach(d=>{ const x=X(d.geo[1]), y=Y(d.geo[0]);
+    const relleno = d.precio==null ? "var(--surface-1)" : RAMPA[banda(d)];
+    const borde   = d.precio==null ? 'stroke="var(--muted)" stroke-width="3" stroke-dasharray="3 3"'
+                                   : 'stroke="var(--surface-1)" stroke-width="2"';
+    g+=`<g class="pt" data-id="${d.id}" style="cursor:pointer">
+      <circle cx="${x}" cy="${y}" r="8" fill="${relleno}" ${borde}/>
+      ${rotular.has(d.id)?`<text x="${x}" y="${y-13}" text-anchor="middle" font-size="11" fill="var(--ink-2)">${d.nombre.slice(0,22)}</text>`:``}</g>`; });
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${g}</svg>`;
+  const tip=document.getElementById("tip");
+  host.querySelectorAll(".pt").forEach(el=>{ const d=DEPAS.find(x=>x.id===el.dataset.id);
+    el.onmousemove=e=>{tip.style.opacity=1;tip.style.left=(e.clientX+14)+"px";tip.style.top=(e.clientY+14)+"px";
+      tip.innerHTML=`<b>${d.nombre}</b><br>${fmtUSD(precioTodo(d))} · ${d.m2Techados} m²<br>${Math.round(precioM2(d)).toLocaleString("es-PE")} S/ por m²`;};
+    el.onmouseleave=()=>tip.style.opacity=0; el.onclick=()=>abrir(d.id); });
+  document.getElementById("mapleg").innerHTML =
+    `<span style="color:var(--muted)">S/ por m²:</span>`+
+    RAMPA.map((c,i)=>`<span><i style="background:${c}"></i>${Math.round(mn+paso*i).toLocaleString("es-PE")}${i===4?"+":""}</span>`).join("")+
+    `<span><i style="background:var(--good);border-radius:2px"></i>referencia</span>`;
+  document.getElementById("sinubicar").textContent = sin.length
+    ? `Sin ubicar: ${sin.map(d=>d.nombre).join(", ")} — la dirección del aviso es demasiado vaga.` : "";
+}
+
+/* ============ ficha ============ */
+const CHECKLIST = ["Presión de agua en ducha y cocina","Ruido con la ventana abierta y cerrada","Señal de celular en el dormitorio","Humedad en closets, techos y baños","Orientación real a esta hora del día","Cuota de mantenimiento vigente (pedir recibo)","Deudas o derramas pendientes del edificio","Reglamento interno: mascotas, mudanzas, Airbnb","Cuántos depas por piso y quiénes son los vecinos","Estacionamiento: probar el ingreso con el auto","Independización y partida registral al día","Fecha de entrega que figura en el CONTRATO, no en el brochure","Penalidad por atraso y hasta cuándo puede postergarse","Si es en planos: fideicomiso o carta fianza del proyecto","Qué queda incluido: closets, cocina, sanitarios","Salidas de gas, aire acondicionado, lavandería","Grupo electrógeno / cisterna / bombas"];
+function abrir(id){
+  const d = DEPAS.find(x=>x.id===id); if(!d) return;
+  const sc = scores(DEPAS)[id], tp = topeInfo(d), en = entregaInfo(d);
+  const fotos = (d.fotos&&d.fotos.length? d.fotos : []).map(f=>
+    `<img src="${f}" alt="" loading="lazy" referrerpolicy="no-referrer"
+          onerror="this.classList.add('rota');this.removeAttribute('src')">`).join("");
+  document.getElementById("sheet").innerHTML = `
+   <header>
+     <div><h2>${d.nombre}</h2>
+       <div style="color:var(--muted);font-size:13px">${d.direccion} · ${d.zona}</div>
+       <div class="stt" style="margin-top:6px"><i style="background:${estadoInfo(d.estado).color}"></i>${estadoInfo(d.estado).label}
+         ${d.cita?` · cita ${d.cita}`:""} · lo mandó ${d.quien} · score ${sc??"—"}
+         · <b style="color:${tp.color}">${d.precio==null?"precio por confirmar":fmtUSD(precioTodo(d))+" todo incluido"}</b></div></div>
+     <button class="close" id="cls">✕</button>
+   </header>
+   ${fotos?`<div class="gal">${fotos}</div>`:`<div class="hint">Sin fotos cargadas todavía — mándame el link o las capturas y las agrego.</div>`}
+   <div class="dgrid">
+     <section><h4>Plata</h4>
+       <div class="kv"><span>Precio del depa</span><b>${d.precio==null?pend("por confirmar"):fmtUSD(d.precio)}</b></div>
+       <div class="kv"><span>Estacionamiento</span><b>${d.precioEst==null?pend("por confirmar"):d.precioEst?fmtUSD(d.precioEst):"incluido"}</b></div>
+       <div class="kv"><span>Depósito</span><b>${d.precioDep?fmtUSD(d.precioDep):(d.deposito===true?"incluido":d.deposito===false?"no tiene":pend("por confirmar"))}</b></div>
+       <div class="kv"><span>Todo incluido</span><b style="color:${tp.color}">${d.precio==null?"por confirmar":fmtUSD(precioTodo(d))}</b></div>
+       <div class="kv"><span>vs. tope de ${fmtK(BUDGET.max)}</span><b style="color:${tp.color}">${tp.label}</b></div>
+       <div class="kv"><span>Gastos de cierre</span><b>${fmtUSD(d.gastosCierre||0)}</b></div>
+       <div class="kv"><span>Desembolso total</span><b>${d.precio==null?pend("por confirmar"):fmtUSD(costoTotal(d))}</b></div>
+       <div class="kv"><span>S/ por m² (depa)</span><b>${d.precio==null?pend("—"):Math.round(precioM2(d)).toLocaleString("es-PE")}</b></div>
+       <div class="kv"><span>Mantenimiento</span><b>${d.mantenimiento?fmtPEN(d.mantenimiento):pend("no publicado")}</b></div>
+       <div class="kv"><span>Referencia mensual</span><b>${d.precio==null?pend("—"):fmtPEN(cuota(d)*TC)}</b></div>
+       ${d.incluye?`<div style="font-size:12px;color:var(--muted);margin-top:7px">${d.incluye}</div>`:""}
+     </section>
+     <section><h4>El depa</h4>
+       <div class="kv"><span>Área techada / libre</span><b>${d.m2Techados} / ${d.m2Libres||0} m²</b></div>
+       <div class="kv"><span>Dormitorios</span><b>${d.dorms}</b></div>
+       <div class="kv"><span>Baños</span><b>${typeof d.banos==="number"?d.banos:pend("?")}${d.medioBano===true?" + ½ de visita":d.medioBano===null?" · ½ por confirmar":""}</b></div>
+       <div class="kv"><span>Estacionamiento</span><b>${typeof d.estacionamientos==="number"?d.estacionamientos:pend("?")}${d.deposito===true?" + depósito":""}</b></div>
+       <div class="kv"><span>Piso / ascensores</span><b>${pisoTxt(d)}</b></div>
+       <div class="kv"><span>Estado</span><b>${d.estreno?"Estreno":d.antiguedad+" años"}</b></div>
+       <div class="kv"><span>Disponible</span><b style="color:${en.color}">${en.label}</b></div>
+       ${d.entregaNota?`<div style="font-size:12px;color:var(--muted);padding:2px 0 4px">${d.entregaNota}</div>`:""}
+       <div class="kv"><span>Orientación / luz</span><b>${luzTxt(d)}</b></div>
+       <div class="kv"><span>Vista / balcón</span><b>${d.vista==="por confirmar"?pend("por confirmar"):d.vista}${d.balcon===true?" · con balcón":""}</b></div>
+     </section>
+     <section><h4>Ubicación</h4>
+       ${DESTINOS.map(x=>`<div class="kv"><span>A ${x.label}</span><b>${min(d.commute[x.k])}</b></div>`).join("")}
+       <div class="kv"><span>Caminando</span><b style="font-weight:450;text-align:right">${d.caminando}</b></div>
+       <div class="kv"><span>Contacto</span><b style="font-weight:450;text-align:right">${d.contacto}</b></div>
+       <div class="kv"><span>Fuente</span><b style="font-weight:450">${d.fuente} · ${d.agregado}</b></div>
+     </section>
+     <section><h4>Qué dijimos</h4>
+       <div class="notes"><b>Rodrigo ${estrellas(d.rating.rodrigo)}</b><br>${d.notas.rodrigo||"—"}</div>
+       <div class="notes"><b>Francisco ${estrellas(d.rating.mama)}</b><br>${d.notas.mama||"—"}</div>
+       <div style="margin-top:10px;font-size:13px">
+         <div style="color:var(--good);font-weight:600">A favor</div><ul style="margin:4px 0 8px;padding-left:18px;color:var(--ink-2)">${d.pros.map(p=>`<li>${p}</li>`).join("")}</ul>
+         <div style="color:var(--critical);font-weight:600">En contra</div><ul style="margin:4px 0 0;padding-left:18px;color:var(--ink-2)">${d.contras.map(p=>`<li>${p}</li>`).join("")}</ul>
+       </div>
+     </section>
+     <section style="grid-column:1/-1"><h4>Checklist para la visita</h4>
+       <ul class="chk-list">${CHECKLIST.map(c=>`<li>${c}</li>`).join("")}</ul>
+     </section>
+   </div>
+   <div class="actions" style="border-top:1px solid var(--grid);padding-top:14px;margin-top:2px">
+     <span style="font-size:12.5px;color:var(--muted);align-self:center">Cita:</span>
+     <input type="datetime-local" id="citaInput" value="${d.cita?d.cita.replace(" ","T"):""}"
+            style="border:1px solid var(--border);background:var(--plane);border-radius:9px;padding:7px 10px;color:var(--ink)">
+     <button id="citaClear">Quitar cita</button>
+     <a id="citaCal" href="#" target="_blank" rel="noopener" ${d.cita?"":'style="opacity:.4;pointer-events:none"'}>Agendar en Google Calendar ↗</a>
+   </div>
+   <div class="actions">
+     <span style="font-size:12.5px;color:var(--muted);align-self:center">Mover a:</span>
+     ${ESTADOS.map(e=>`<button data-mv="${e.k}" ${e.k===d.estado?'style="border-color:var(--s1);color:var(--s1)"':''}>${e.label}</button>`).join("")}
+     <div style="flex:1"></div>
+     ${d.url?`<a href="${d.url}" target="_blank" rel="noopener">Ver aviso ↗</a>`:""}
+     ${d.maps?`<a href="${d.maps}" target="_blank" rel="noopener">Abrir en Maps ↗</a>`:""}
+     <button onclick="window.print()">Imprimir ficha</button>
+   </div>`;
+  const ov = document.getElementById("ov");
+  ov.classList.add("on");
+  ov.scrollTop = 0;                       // la ficha siempre abre desde el título
+  document.body.style.overflow = "hidden"; // el fondo no se mueve detrás del modal
+  document.getElementById("cls").onclick = cerrar;
+  document.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>{ d.estado=b.dataset.mv; cerrar(); render(); });
+
+  // --- edición de la cita ---
+  const inp = document.getElementById("citaInput"), cal = document.getElementById("citaCal");
+  const syncCal = () => {
+    if(!d.cita){ cal.style.opacity=".4"; cal.style.pointerEvents="none"; return; }
+    cal.style.opacity=""; cal.style.pointerEvents="";
+    cal.href = gcalURL(d);
+  };
+  inp.onchange = () => {
+    d.cita = inp.value ? inp.value.replace("T"," ") : "";
+    // si agendas una cita y todavía no estaba agendada, mueve el estado solo
+    if(d.cita && (d.estado==="por_ver" || d.estado==="contactado")) d.estado = "cita";
+    syncCal(); render();
+    document.querySelector("#sheet .stt").innerHTML =
+      `<i style="background:${estadoInfo(d.estado).color}"></i>${estadoInfo(d.estado).label}` +
+      (d.cita?` · cita ${d.cita}`:"") + ` · lo mandó ${d.quien} · score ${scores(DEPAS)[d.id]??"—"}` +
+      ` · <b style="color:${tp.color}">${d.precio==null?"precio por confirmar":fmtUSD(precioTodo(d))+" todo incluido"}</b>`;
+  };
+  document.getElementById("citaClear").onclick = () => { inp.value=""; inp.onchange(); };
+  syncCal();
+}
+/* Link para crear el evento en Google Calendar (1 hora de duración) */
+function gcalURL(d){
+  const pad = n => String(n).padStart(2,"0");
+  const ini = new Date(d.cita.replace(" ","T"));
+  const fin = new Date(ini.getTime() + 60*60*1000);
+  const st = x => `${x.getFullYear()}${pad(x.getMonth()+1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
+  const det = [`${fmtUSD(precioTodo(d))} todo incluido · ${d.m2Techados} m² · ${d.dorms}D ${typeof d.banos==="number"?d.banos+"B":"?B"}${d.medioBano===true?" + ½":""}`,
+               `Disponible: ${entregaInfo(d).label}`, `Contacto: ${d.contacto}`, d.url?`Aviso: ${d.url}`:""].filter(Boolean).join("\n");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE"
+    + "&text=" + encodeURIComponent("Visita depa · " + d.nombre)
+    + "&dates=" + st(ini) + "/" + st(fin)
+    + "&location=" + encodeURIComponent(d.direccion + ", " + d.zona + ", Lima")
+    + "&details=" + encodeURIComponent(det);
+}
+function cuota(d){ // cuota mensual referencial en S/: 80% financiado, 20 años, 9% anual
+  const P=d.precio*0.8, i=0.09/12, n=240; return P*i/(1-Math.pow(1+i,-n));
+}
+function cerrar(){ document.getElementById("ov").classList.remove("on"); document.body.style.overflow = ""; }
+document.getElementById("ov").onclick = e => { if(e.target.id==="ov") cerrar(); };
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrar(); });
+
+/* ============ controles ============ */
+function render(){
+  const dentro = DEPAS.filter(d=>!sobreTope(d)).length;
+  document.getElementById("sub").textContent =
+    `Alquiler · tope S/ 4,000 con mantenimiento · ${DEPAS.length} departamentos · ${dentro} dentro del tope · ${visibles().length} en vista`;
+  if(S.view==="pipeline") renderBoard();
+  if(S.view==="tabla") renderTable();
+  if(S.view==="cara") renderCmp();
+  if(S.view==="mapa") renderMapa();
+  if(S.view==="grafico") renderScatter();
+}
+document.querySelectorAll('[role="tab"]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[role="tab"]').forEach(x=>x.setAttribute("aria-selected", x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  S.view=b.dataset.view; document.getElementById("v-"+S.view).classList.add("on"); render();
+});
+const bind=(id,key,ev="change")=>document.getElementById(id).addEventListener(ev,e=>{S.f[key]=e.target.value;render();});
+bind("q","q","input"); bind("fzona","zona"); bind("fdorm","dorm"); bind("fprecio","precio");
+bind("fentrega","entrega"); bind("fquien","quien");
+[["ftope","tope"],["fmedio","medio"],["fest","estreno"],["factivos","activos"]].forEach(([id,k])=>{
+  const el=document.getElementById(id);
+  el.onclick=()=>{S.f[k]=!S.f[k]; el.setAttribute("aria-pressed",S.f[k]); render();};
+});
+document.getElementById("theme").onclick=()=>{
+  const r=document.documentElement; r.dataset.theme = r.dataset.theme==="dark"?"light":"dark"; render();
+};
+document.getElementById("export").onclick=()=>{
+  const payload = DEPAS.map(d=>({id:d.id,nombre:d.nombre,estado:d.estado,cita:d.cita,rating:d.rating}));
+  navigator.clipboard.writeText(JSON.stringify(payload,null,1)).then(
+    ()=>alert("Copiado: estados, citas y ratings. Pégamelo en el chat y consolido los cambios."),
+    ()=>alert("No se pudo copiar automáticamente.")
+  );
+};
+// zonas del filtro
+[...new Set(DEPAS.map(d=>d.zona))].sort().forEach(z=>{
+  const o=document.createElement("option"); o.textContent=z; document.getElementById("fzona").appendChild(o);
+});
+// pesos
+const wg=document.getElementById("wgrid");
+CRITERIOS.forEach(c=>{
+  const w=document.createElement("div"); w.className="w";
+  w.innerHTML=`<label>${c.label}<span id="wv-${c.k}">${c.peso}</span></label><input type="range" min="0" max="50" value="${c.peso}" data-w="${c.k}">`;
+  wg.appendChild(w);
+});
+document.querySelectorAll("[data-w]").forEach(r=>r.oninput=()=>{
+  CRITERIOS.find(c=>c.k===r.dataset.w).peso = +r.value;
+  document.getElementById("wv-"+r.dataset.w).textContent = r.value;
+  document.getElementById("wsum").textContent = "total " + CRITERIOS.reduce((a,c)=>a+c.peso,0);
+  render();
+});
+document.getElementById("wsum").textContent = "total " + CRITERIOS.reduce((a,c)=>a+c.peso,0);
+window.addEventListener("resize",()=>{ if(S.view==="grafico") renderScatter(); });
+render();
+</script>
+
+
+<style>
+.filters .f-num{width:72px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface-1);color:var(--ink);font:inherit;font-size:13px}
+.filters .f-dash{color:var(--muted);margin:0 -2px}
+</style>
+<script>
+window.__radar=(function(){
+ var ALLD=null, dir=1;
+ function val(d,k){ if(k==="pm2")return (d.precio&&d.m2Techados)?d.precio/d.m2Techados:null; if(k==="m2")return d.m2Techados; if(k==="mant")return d.mantenimiento; if(k==="estac")return d.estacionamientos; if(k==="nombre")return d.nombre; return d[k]; }
+ function apply(){
+  try{
+   if(!ALLD) ALLD=DEPAS.slice();
+   var a=document.getElementById("fm2min"), b=document.getElementById("fm2max"), o=document.getElementById("forden");
+   var mn=a?parseFloat(a.value):NaN, mx=b?parseFloat(b.value):NaN, k=o?o.value:"tablero";
+   var list=ALLD.filter(function(d){var m=d.m2Techados; if(!isNaN(mn)&&(m==null||m<mn))return false; if(!isNaN(mx)&&(m==null||m>mx))return false; return true;});
+   if(k==="tablero"){ if(dir===-1) list=list.slice().reverse(); }
+   else { list=list.slice().sort(function(x,y){var p=val(x,k),q=val(y,k); if(p==null&&q==null)return 0; if(p==null)return 1; if(q==null)return -1; if(typeof p==="string")return dir*p.localeCompare(q,"es"); return dir*(p-q);}); }
+   if(k!=="tablero"&&k!=="antiguedad"&&k!=="nombre") S.sort={k:(k==="estac"?"est":k), dir:dir};
+   DEPAS.length=0; Array.prototype.push.apply(DEPAS,list); render();
+  }catch(e){ console.error("radar", e); }
+ }
+ function flip(){ dir=-dir; var t=document.getElementById("fdir"); if(t) t.textContent = dir===1?"↑ Menor a mayor":"↓ Mayor a menor"; apply(); }
+ function boot(){
+  try{
+   var anchor=document.getElementById("fquien"); if(!anchor||document.getElementById("fm2min"))return;
+   ALLD=DEPAS.slice();
+   var f=document.createElement("span"); f.style.cssText="display:contents";
+   f.innerHTML='<span class="f-label">m² tech.</span>'+
+    '<input type="number" class="f-num" id="fm2min" placeholder="desde" min="0" step="5" oninput="__radar.apply()" onchange="__radar.apply()">'+
+    '<span class="f-dash">–</span>'+
+    '<input type="number" class="f-num" id="fm2max" placeholder="hasta" min="0" step="5" oninput="__radar.apply()" onchange="__radar.apply()">'+
+    '<span class="f-label">Ordenar</span>'+
+    '<select id="forden" onchange="__radar.apply()"><option value="tablero">Orden del tablero</option><option value="precio">Precio</option><option value="pm2">S/ por m²</option><option value="m2">Metros</option><option value="antiguedad">Antigüedad</option><option value="mant">Mantenimiento</option><option value="dorms">Dormitorios</option><option value="banos">Baños</option><option value="estac">Estacionamientos</option><option value="nombre">Nombre</option></select>'+
+    '<button class="pill" id="fdir" title="Invertir el orden" onclick="__radar.flip()">↑ Menor a mayor</button>';
+   anchor.parentNode.insertBefore(f, anchor.nextSibling);
+   var ex=document.getElementById("export");
+   if(ex) ex.addEventListener("click", function(){ var cur=DEPAS.slice(); DEPAS.length=0; Array.prototype.push.apply(DEPAS,ALLD); setTimeout(function(){DEPAS.length=0;Array.prototype.push.apply(DEPAS,cur);},0); }, true);
+  }catch(e){ console.error("radar boot", e); }
+ }
+ if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",function(){setTimeout(boot,80);}); else setTimeout(boot,80);
+ return {apply:apply, flip:flip, boot:boot};
+})();
+</script>
+
+<style>#rgb-save{font-size:12px;color:var(--muted);margin-right:10px}#rgb-reset{font-size:12px;background:none;border:0;color:var(--muted);cursor:pointer;text-decoration:underline;margin-right:10px}</style>
+
+
+<script>
+(function(){
+var SYNC="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?ns=mara";
+var LK='mara_estado_v1';
+var base={},dirty={},lastTick=0;
+function cur(){var o={};DEPAS.forEach(function(d){o[d.id]={e:d.estado||'',rr:(d.rating&&d.rating.rodrigo)||0,rm:(d.rating&&d.rating.mara)||0,nr:(d.notas&&d.notas.rodrigo)||'',nm:(d.notas&&d.notas.mara)||'',c:d.cita||'',t:0};});return o;}
+function same(a,b){return a.e===b.e&&a.rr===b.rr&&a.rm===b.rm&&a.nr===b.nr&&a.nm===b.nm&&a.c===b.c;}
+function apply(o){var m={};DEPAS.forEach(function(d){m[d.id]=d;});Object.keys(o||{}).forEach(function(k){var d=m[k],v=o[k];if(!d||!v)return;if(v.e)d.estado=v.e;d.rating=d.rating||{};d.rating.rodrigo=v.rr||0;d.rating.mara=v.rm||0;d.notas=d.notas||{};d.notas.rodrigo=v.nr||'';d.notas.mara=v.nm||'';d.cita=v.c||'';});}
+function saveLocal(){try{localStorage.setItem(LK,JSON.stringify(cur()));}catch(e){}}
+function loadLocal(){try{var s=localStorage.getItem(LK);if(s)apply(JSON.parse(s));}catch(e){}}
+function redraw(){try{render();}catch(e){}}
+function push(){var p={};Object.keys(dirty).forEach(function(k){p[k]=base[k];});if(!Object.keys(p).length)return;dirty={};fetch(SYNC,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({data:p})}).then(function(r){return r.json();}).then(function(js){if(js&&js.ok&&js.data){apply(js.data);base=cur();redraw();saveLocal();}}).catch(function(){});}
+function pull(){fetch(SYNC,{cache:'no-store'}).then(function(r){return r.json();}).then(function(js){if(js&&js.ok&&js.data){apply(js.data);base=cur();redraw();saveLocal();}}).catch(function(){});}
+function scan(){var c=cur(),now=Date.now(),n=0;Object.keys(c).forEach(function(k){var b=base[k];if(!b){var z=c[k];z.t=0;base[k]=z;return;}if(!same(c[k],b)){var v=c[k];v.t=now;base[k]=v;dirty[k]=1;n++;}});if(n){saveLocal();push();}}
+function tick(){var n=Date.now();if(n-lastTick<250)return;lastTick=n;scan();}
+['click','change','input','keyup','drop','dragend','mouseup','touchend'].forEach(function(ev){document.addEventListener(ev,tick,true);});
+loadLocal();base=cur();redraw();pull();setInterval(pull,20000);
+})();
+</script>
+
+<script>
+(function(){
+var U="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?blob=marafotos";
+var CK='mara_fotos_v1';
+var HOST='https://img10.naventcdn.com/avisos/';
+function url(t){var p=t.split('.');return HOST+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'/'+p[5]+'/'+p[6]+'/360x266/'+p[7]+'.jpg';}
+function fill(txt){if(!txt)return 0;var map={};txt.split(';').forEach(function(row){var i=row.indexOf('=');if(i<0)return;map[row.slice(0,i)]=row.slice(i+1).split('_').map(url);});var n=0;DEPAS.forEach(function(d){var key=(d.url||'').match(/x-(\d+)\.html/);key=key?key[1]:null;if(key&&map[key]&&map[key].length){d.fotos=map[key];n++;}});if(n){try{render();}catch(e){}}return n;}
+try{var c=localStorage.getItem(CK);if(c)fill(c);}catch(e){}
+fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}fill(j.v);}}).catch(function(){});
+})();
+</script>
+
+<script>
+(function(){
+var U="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?blob=maraurb", CK='mara_urb_v1';
+var GEO={"Sagitario":[-12.16422,-76.99527],"Camino Real":[-12.14722,-77.01099],"La Cruceta":[-12.15625,-76.99001],"Cruz De Surco":[-12.1203,-76.98767],"Chama":[-12.12606,-76.99653],"Los Alamos":[-12.166,-76.98455],"La Castellana":[-12.13461,-77.00211],"Valle Hermoso":[-12.1233,-76.97458],"Higuereta":[-12.12261,-76.99474],"Vista Alegre":[-12.134,-76.99212],"La Alborada":[-12.12494,-76.9886],"Monterrico":[-12.09502,-76.96964],"Los Alamos De Monterrico":[-12.10842,-76.96362],"Los Rosales":[-12.14296,-76.99826],"Parque Alto":[-12.14483,-77.01169],"Las Gardenias":[-12.11915,-76.97429],"Las Magnolias":[-12.13444,-77.0112],"El Derby":[-12.09857,-76.97792],"Tambo De Monterrico":[-12.11585,-76.9922],"Pampas De Santa Teresa":[-12.12208,-76.98054],"Santa Constanza":[-12.08294,-76.97707],"Chacarilla Del Estanque":[-12.11,-76.985],"Las Casuarinas":[-12.115,-76.97],"Santa Teresa":[-12.12208,-76.98054],"Surco":[-12.1251,-76.98216],"Barranco":[-12.14396,-77.02027],"San Borja":[-12.09645,-76.99569],"San Borja Norte":[-12.09452,-77.00242],"San Borja Sur":[-12.10069,-77.00176],"San Borja Residencial":[-12.10903,-77.00457],"Chacarilla":[-12.11021,-76.98537],"Javier Prado":[-12.08383,-76.9887],"Corpac":[-12.09859,-77.01136],"Rosario del Norte":[-12.10676,-77.0077],"Las Torres de":[-12.10903,-77.00457]};
+var COL=[-12.1342,-76.9797], CASA=[-12.15214,-77.02322], JOCK=[-12.0855,-76.9770];
+function hav(a,b){var R=6371,p1=a[0]*Math.PI/180,p2=b[0]*Math.PI/180,dp=(b[0]-a[0])*Math.PI/180,dl=(b[1]-a[1])*Math.PI/180;var x=Math.sin(dp/2)*Math.sin(dp/2)+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);return 2*R*Math.asin(Math.sqrt(x));}
+function mins(k){return Math.round(k/22*60+4);}
+function ph(t){var p=t.split('.');return 'https://img10.naventcdn.com/avisos/'+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'/'+p[5]+'/'+p[6]+'/360x266/'+p[7]+'.jpg';}
+function norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+function add(txt){if(!txt)return 0;
+ var seen={};DEPAS.forEach(function(d){seen[norm(d.nombre)+'|'+d.dorms+'|'+(d.m2Techados||0)+'|'+Math.round((d.precio||0)/50)]=1;});
+ var n=0, k=DEPAS.length;
+ txt.split(';').forEach(function(row){var f=row.split('|');if(f.length<9)return;
+  var id=f[0],p=+f[1],mm=+f[2],m2=+f[3],dor=+f[4],ban=+f[5],est=+f[6],urb=f[7]||'Surco',zona=f[8],fot=(f[9]||'').split(',').filter(Boolean).map(ph);
+  var key=norm(urb)+'|'+dor+'|'+m2+'|'+Math.round(p/50); if(seen[key])return; seen[key]=1;
+  var g=GEO[urb]||GEO[zona]||GEO['Surco'];
+  var aprox=!GEO[urb];
+  k++;var tot=p+mm;
+  DEPAS.push({id:'U'+(++n),nombre:urb+(aprox?' (sin urb.)':''),zona:zona,direccion:urb+', '+zona,estado:'por_ver',quien:'Radar',fuente:'Urbania',url:'https://urbania.pe/inmueble/clasificado/x-'+id,agregado:'2026-09-01',cita:'',contacto:'por confirmar en el aviso',precio:p,precioEst:null,precioDep:null,incluye:mm?('Alquiler S/'+p+' + mantenimiento S/'+mm+' = S/'+tot+' al mes.'):('Alquiler S/'+p+'. El aviso NO declara mantenimiento.'),mantenimiento:mm||null,gastosCierre:0,m2Techados:m2||null,m2Libres:0,dorms:dor,banos:ban||null,medioBano:false,piso:null,ascensores:null,estreno:false,antiguedad:null,entrega:'inmediata',entregaNota:'Disponibilidad por confirmar.',estacionamientos:est,deposito:null,orientacion:'por confirmar',luz:null,vista:'por confirmar',balcon:false,commute:{colegio:mins(hav(g,COL)),casa:mins(hav(g,CASA)),jockey:mins(hav(g,JOCK))},caminando:'',fotos:fot,maps:'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(urb+', Lima')+'&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco',rating:{mara:0,rodrigo:0},notas:{mara:'',rodrigo:''},pros:[(tot<=4000?('S/'+tot+' al mes, dentro del presupuesto'):('S/'+tot+' al mes')),(est?est+' estacionamiento(s)':null),'Nuevo: viene de Urbania'].filter(Boolean),contras:[(est?null:'Sin estacionamiento'),(mm?null:'No declara mantenimiento'),(aprox?'Ubicacion aproximada':null),'Sin visitar y sin confirmar por telefono'].filter(Boolean),geo:{lat:g[0],lon:g[1]}});
+ });
+ if(n){try{render();}catch(e){}} return n;}
+try{var c=localStorage.getItem(CK);if(c)add(c);}catch(e){}
+fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}add(j.v);}}).catch(function(){});
+})();
+</script>
+
+<script>
+(function(){
+var EX="https://script.google.com/macros/s/"+["AKfycbyq","VBFLqFgA","hy0RQtvo","jLjAu24E","-KmHlYwN","X5xhdTp4","Vw2eNKsq","77mbewA2","qSIpff49","5g"].join("")+"/exec";
+var COL=[-12.1342,-76.9797],CASA=[-12.15214,-77.02322],JOCK=[-12.0855,-76.977];
+function hav(a,b,c,d){var R=6371,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t;var h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(h));}
+function mins(k){return Math.round(k/22*60+4);}
+function cmt(la,lo){return {colegio:mins(hav(la,lo,COL[0],COL[1])),casa:mins(hav(la,lo,CASA[0],CASA[1])),jockey:mins(hav(la,lo,JOCK[0],JOCK[1]))};}
+function navurl(c){var p=c.split(".");if(p.length<3)return "";return "https://img"+p[0]+".naventcdn.com/avisos/"+p.slice(1,-1).join("/")+"/360x266/"+p[p.length-1]+".jpg";}
+function icurl(c){var i=c.indexOf(".");if(i<0)return "";return "https://cdn4.fincaraiz.com.co/"+(c.slice(0,i)==="r"?"repo/img":"web")+"/th.outside384x275."+c.slice(i+1);}
+var URBSURCO=/monterrico|camacho|gardenias|magnolias|alamos|valle hermoso|vista alegre|santa teresa|tiravanti|higuereta|castellana|cruceta|cruz de surco|chama|alborada|rosales|parque alto|derby|sagitario|santa constanza|vinedos|vi\u00f1edos|benavides|casuarinas|tambo|el polo/i;function nz(z){z=(z||"").trim();if(/san\s*borja|chacarilla del estanque/i.test(z))return "San Borja";if(/barranco/i.test(z))return "Barranco";if(/surco/i.test(z)||URBSURCO.test(z))return "Surco";return z;}
+function tit(s){return (s||"").split("-").filter(function(w){return !/^(alquiler|de|en|el|la|los|las|departamento|depa|m)$/i.test(w);}).map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" ");}
+function key(d){return [nz(d.zona),d.dorms||0,d.m2Techados||0,Math.round((d.precio||0)/25)].join("|");}
+var LOCTXT="",INFTXT="";
+function aplicaLoc(){if(!LOCTXT||typeof DEPAS==="undefined")return;var m={};
+LOCTXT.split(";").forEach(function(r){var p=r.split("|");if(p[0])m[p[0]]=p;});
+DEPAS.forEach(function(d){var q=(d.url||"").match(/x-(\d+)/);if(!q)return;var p=m[q[1]];if(!p)return;
+if(p[4])d.direccion=p[4];var z=nz(p[3]);if(z)d.zona=z;
+if(p[1]&&p[2]){var la=+p[1],lo=+p[2];d.geo={lat:la,lon:lo};d.commute=cmt(la,lo);d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
+d.fotos=p[5]?[navurl(p[5])]:[];});}
+function aplicaInfo(){if(!INFTXT||typeof DEPAS==="undefined"||DEPAS.__inf)return;
+var have={},ids={};DEPAS.forEach(function(d){have[key(d)]=1;var q=(d.url||"").match(/x-(\d+)/);if(q)ids[q[1]]=1;});
+var base=DEPAS[0]||{},n=0;
+INFTXT.split(";").forEach(function(r){var p=r.split("|");if(p.length<12||!p[0]||ids[p[0]])return;
+var zona=nz(p[9]);var d={};for(var k in base)d[k]=null;
+d.id="F"+(++n);d.zona=zona;d.nombre=(tit(p[11])||zona)+" ("+zona+")";d.direccion=tit(p[11]);
+d.estado="por_ver";d.quien="";d.fuente="InfoCasas";d.url="https://www.infocasas.com.pe"+(p[11].charAt(0)==="*"?("/"+p[11].slice(1)):("/departamento-en-"+p[11]+"/"+p[0]));
+d.precio=+p[1]||0;d.mantenimiento=+p[2]||0;d.m2Techados=+p[3]||0;d.m2Libres=0;d.dorms=+p[4]||0;d.banos=+p[5]||0;d.estacionamientos=+p[6]||0;
+d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={};d.notas="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";
+if(have[key(d)])return;have[key(d)]=1;
+if(p[7]&&p[8]){var la=+p[7],lo=+p[8];d.geo={lat:la,lon:lo};d.commute=cmt(la,lo);d.geoOk=1;}else{d.geo=null;d.geoOk=0;d.commute={};}
+d.fotos=p[10]?[icurl(p[10])]:[];DEPAS.push(d);});DEPAS.__inf=1;}
+function carga(){fetch(EX+"?blob=maraloc",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){LOCTXT=j.v;aplicaLoc();if(window.render)render();}}).catch(function(){});
+fetch(EX+"?blob=marainfo",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){INFTXT=j.v;aplicaInfo();aplicaLoc();if(window.render)render();}}).catch(function(){});}
+function pz(){try{var s=document.getElementById("fzona");if(!s||typeof DEPAS==="undefined")return;
+var zs=[];DEPAS.forEach(function(d){if(d.zona&&zs.indexOf(d.zona)<0)zs.push(d.zona);});zs.sort();
+var have=[];for(var i=0;i<s.options.length;i++)have.push(s.options[i].value);
+if(!zs.filter(function(z){return have.indexOf(z)<0;}).length)return;var cur=s.value;
+s.innerHTML=['<option value="">Todas</option>'].concat(zs.map(function(z){return '<option value="'+z+'">'+z+'</option>';})).join("");s.value=cur;}catch(e){}}
+function pp(){try{var p=document.getElementById("fprecio");if(!p||p.dataset.rent)return;p.dataset.rent="1";
+var v=[["","Sin tope"],["3000","S/ 3,000"],["3500","S/ 3,500"],["4000","S/ 4,000"],["4600","S/ 4,600"]];
+p.innerHTML=v.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join("");}catch(e){}}
+function refs(){try{if(typeof REFS==="undefined"||REFS.__mara)return;REFS.length=0;
+REFS.push({n:"Colegio Franco Peruano",g:COL});REFS.push({n:"Casa actual (Bresciani)",g:CASA});REFS.push({n:"Jockey Plaza",g:JOCK});REFS.__mara=1;}catch(e){}}
+function leg(){try{var els=document.querySelectorAll("p,div,small,span");for(var i=0;i<els.length;i++){var e=els[i];
+if(e.children.length===0&&/rombo verde|rombos verdes/.test(e.textContent)){e.textContent="El color del punto es el alquiler por m2: mientras mas oscuro, mas caro por metro. Los rombos verdes son el colegio Franco Peruano, la casa actual de Mara y el Jockey Plaza. Solo se dibujan los avisos con direccion verificada; los que no la tienen aparecen en el tablero pero no en el mapa. Click en un punto para abrir la ficha.";}}}catch(e){}}
+function fixleg(){try{var e=document.getElementById("mapleg");if(!e||typeof DEPAS==="undefined")return;
+var pm=[];DEPAS.forEach(function(d){if(!d.geo)return;var v=null;try{v=precioM2(d);}catch(x){}if(typeof v==="number"&&isFinite(v))pm.push(v);});
+if(!pm.length)return;var mn=Math.min.apply(null,pm),mx=Math.max.apply(null,pm),paso=(mx-mn)/5||1;var k=e.children;
+for(var i=1;i<=5&&i<k.length;i++){var lo=Math.round(mn+paso*(i-1)),hi=Math.round(mn+paso*i);
+var t=(i===5)?(lo+"+"):(lo+"\u2013"+hi),sp=k[i],tn=null;
+for(var j=sp.childNodes.length-1;j>=0;j--){if(sp.childNodes[j].nodeType===3){tn=sp.childNodes[j];break;}}
+if(tn)tn.nodeValue=" "+t;else sp.appendChild(document.createTextNode(" "+t));}}catch(e){}}
+try{var _lm=L.map;L.map=function(){var m=_lm.apply(this,arguments);window.__MAPA=m;return m;};}catch(e){}
+var lastN=-1;
+function fit(){try{var m=window.__MAPA;if(!m)return;var b=null;
+m.eachLayer(function(l){var ll=l.getLatLng&&l.getLatLng();if(ll){b=b?b.extend(ll):L.latLngBounds(ll,ll);}});
+if(b&&b.isValid())m.fitBounds(b,{padding:[30,30]});}catch(e){}}
+function hook(){try{if(!window.renderMapa||window.renderMapa.__mara)return;var _r=window.renderMapa;
+var w=function(){refs();var o=_r.apply(this,arguments);
+setTimeout(function(){fixleg();try{var n=DEPAS.filter(function(d){return d.geo;}).length;if(n!==lastN){lastN=n;fit();}}catch(e){}},250);
+return o;};w.__mara=1;window.renderMapa=w;}catch(e){}}
+carga();
+var n=0;var t=setInterval(function(){pz();pp();refs();leg();hook();aplicaLoc();if(++n>240)clearInterval(t);},1000);
+pz();pp();refs();leg();hook();})();
+</script>
+</body>
+</html>
