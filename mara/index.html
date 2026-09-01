@@ -1002,6 +1002,7 @@ DEPAS.forEach(function(d){var q=(d.url||"").match(/x-(\d+)/);if(!q)return;var p=
 if(p[4])d.direccion=p[4];var z=nz(p[3]);if(z)d.zona=z;
 if(p[1]&&p[2]){var la=+p[1],lo=+p[2];d.geo={lat:la,lon:lo};d.commute=cmt(la,lo);d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
 d.fotos=p[5]?[navurl(p[5])]:[];});}
+function dedup(){try{if(typeof DEPAS==="undefined")return;var seen={},out=[];for(var i=0;i<DEPAS.length;i++){var d=DEPAS[i];var dk=(d.direccion||"").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"");var k=dk?(dk+"|"+(d.precio||0)+"|"+(d.m2Techados||0)):("x"+i);if(seen[k])continue;seen[k]=1;out.push(d);}if(out.length<DEPAS.length){DEPAS.length=0;for(var j=0;j<out.length;j++)DEPAS.push(out[j]);}}catch(e){}}
 function aplicaInfo(){if(!INFTXT||typeof DEPAS==="undefined"||DEPAS.__inf)return;
 var have={},ids={};DEPAS.forEach(function(d){have[key(d)]=1;var q=(d.url||"").match(/x-(\d+)/);if(q)ids[q[1]]=1;});
 var base=DEPAS[0]||{},n=0;
@@ -1014,8 +1015,8 @@ d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposi
 if(have[key(d)])return;have[key(d)]=1;
 if(p[7]&&p[8]){var la=+p[7],lo=+p[8];d.geo={lat:la,lon:lo};d.commute=cmt(la,lo);d.geoOk=1;}else{d.geo=null;d.geoOk=0;d.commute={};}
 d.fotos=p[10]?[icurl(p[10])]:[];DEPAS.push(d);});DEPAS.__inf=1;}
-function carga(){fetch(EX+"?blob=maraloc",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){LOCTXT=j.v;aplicaLoc();if(window.render)render();}}).catch(function(){});
-fetch(EX+"?blob=marainfo",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){INFTXT=j.v;aplicaInfo();aplicaLoc();if(window.render)render();}}).catch(function(){});}
+function carga(){fetch(EX+"?blob=maraloc",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){LOCTXT=j.v;aplicaLoc();dedup();if(window.render)render();}}).catch(function(){});
+fetch(EX+"?blob=marainfo",{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){if(j&&j.v){INFTXT=j.v;aplicaInfo();aplicaLoc();dedup();if(window.render)render();}}).catch(function(){});}
 function pz(){try{var s=document.getElementById("fzona");if(!s||typeof DEPAS==="undefined")return;
 var zs=[];DEPAS.forEach(function(d){if(d.zona&&zs.indexOf(d.zona)<0)zs.push(d.zona);});zs.sort();
 var have=[];for(var i=0;i<s.options.length;i++)have.push(s.options[i].value);
@@ -1045,7 +1046,7 @@ var w=function(){refs();var o=_r.apply(this,arguments);
 setTimeout(function(){fixleg();try{var n=DEPAS.filter(function(d){return d.geo;}).length;if(n!==lastN){lastN=n;fit();}}catch(e){}},250);
 return o;};w.__mara=1;window.renderMapa=w;}catch(e){}}
 carga();
-var n=0;var t=setInterval(function(){pz();pp();refs();leg();hook();aplicaLoc();if(++n>240)clearInterval(t);},1000);
+var n=0;var t=setInterval(function(){pz();pp();refs();leg();hook();aplicaLoc();dedup();if(++n>240)clearInterval(t);},1000);
 pz();pp();refs();leg();hook();})();
 </script>
 </body>
