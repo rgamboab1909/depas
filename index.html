@@ -1156,7 +1156,7 @@ var zona=nz(p[9]);
 d.zona=zona;d.estado="por_ver";d.quien="";d.fuente=fuente;d.agregado=new Date().toISOString().slice(0,10);
 d.precio=+p[1]||0;d.mantenimiento=+p[2]||0;d.m2Techados=+p[3]||0;d.m2Libres=0;d.dorms=+p[4]||0;d.banos=+p[5]||0;d.estacionamientos=+p[6]||0;
 d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={};d.notas="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";d.fotos=[];
-if(p[7]&&p[8]){d.geo={lat:+p[7],lon:+p[8]};d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
+if(p[7]&&p[8]){d.geo=[+p[7],+p[8]];d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
 if(fuente==="Adondevivir"){d.id="P"+p[0];d.url="https://www.adondevivir.com/propiedades/clasificado/x-"+p[0]+".html";
 d.direccion=p[11]||"";d.nombre=(p[11]||p[12]||zona)+(p[12]?(" \u00b7 "+p[12]):"");if(p[10])d.fotos=[navurl(p[10])];}
 else if(fuente==="InfoCasas"){d.id="F"+p[0];d.url="https://www.infocasas.com.pe/"+p[11]+"/"+p[0];
