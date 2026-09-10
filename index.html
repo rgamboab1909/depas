@@ -618,7 +618,7 @@ const FILAS = [
   ["½ baño de visita",     d=>d.medioBano===true?"Sí":d.medioBano===false?"No":pend("por confirmar")],
   ["Estacionamiento",      d=>(typeof d.estacionamientos==="number"?d.estacionamientos:pend("?")) + (d.deposito===true?" + depósito":d.deposito===false?" · sin depósito":" · depósito por confirmar")],
   ["Piso / ascensores",    d=>pisoTxt(d)],
-  ["Estreno",              d=>d.estreno?"Sí":`No · ${d.antiguedad} años`],
+  ["Estreno",              d=>d.estreno?"Sí":`No · ${d.antiguedad==null?"antigüedad s/d":d.antiguedad+" años"}`],
   ["Fecha de entrega",     d=>{const e=entregaInfo(d); return `<b style="color:${e.color}">${e.label}</b>`;}],
   ["Detalle de entrega",   d=>d.entregaNota||"—"],
   ["Orientación / luz",    d=>luzTxt(d)],
@@ -746,7 +746,7 @@ function renderMapa(){
        (d.precio==null
           ? `<b style="color:#a33">Sin precio publicado</b> · ${d.m2Techados} m²<br>`
           : `${fmtUSD(precioTodo(d))} · ${d.m2Techados} m² · <b>${Math.round(precioM2(d)).toLocaleString("es-PE")} US$/m²</b><br>`)+
-       `<span class="pz">${d.dorms}D ${d.banos}B · ${d.antiguedad} años · ${estadoInfo(d.estado).label}</span><br>`+
+       `<span class="pz">${d.dorms}D ${d.banos}B · ${d.antiguedad==null?"antigüedad s/d":d.antiguedad+" años"} · ${estadoInfo(d.estado).label}</span><br>`+
        `<a href="#" onclick="abrir('${d.id}');return false">Ver ficha</a> · `+
        `<a href="${d.maps}" target="_blank" rel="noopener">Maps ↗</a>`)
      .addTo(CAPA);
@@ -1142,7 +1142,9 @@ window.__radar=(function(){
 <script>
 (function(){
 var EX="https://script.google.com/macros/s/"+["AKfycbyq","VBFLqFgA","hy0RQtvo","jLjAu24E","-KmHlYwN","X5xhdTp4","Vw2eNKsq","77mbewA2","qSIpff49","5g"].join("")+"/exec";
-var TC=3.4;
+var MAL=[-12.12747,-77.03571],RADIO=1.2,MINM2=70;
+function km(a,b,c,d){var R=6371,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t;var s=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(s));}
+function gp(d){if(!d.geo)return null;return (d.geo instanceof Array)?d.geo:[d.geo.lat,d.geo.lon];}
 function navurl(c){var p=c.split(".");if(p.length<3)return "";return "https://img"+p[0]+".naventcdn.com/avisos/"+p.slice(1,-1).join("/")+"/360x266/"+p[p.length-1]+".jpg";}
 function icurl(c){var i=c.indexOf(".");if(i<0)return "";return "https://cdn4.fincaraiz.com.co/"+(c.slice(0,i)==="r"?"repo/img":"web")+"/th.outside384x275."+c.slice(i+1);}
 function nz(z){z=(z||"").trim();if(/miraflores/i.test(z))return "Miraflores";if(/barranco/i.test(z))return "Barranco";return z;}
@@ -1153,10 +1155,13 @@ function tryGet(key,cb,n){fetch(EX+"?blob="+key,{cache:"no-store"}).then(functio
 .catch(function(){if((n||0)<6)setTimeout(function(){tryGet(key,cb,(n||0)+1);},2000*((n||0)+1));});}
 function mk(p,fuente){var d={};var base=DEPAS[0]||{};for(var k in base)d[k]=null;
 var zona=nz(p[9]);
-d.zona=zona;d.estado="por_ver";d.quien="";d.fuente=fuente;d.agregado=new Date().toISOString().slice(0,10);
+d.zona=zona;d.estado="por_ver";d.quien="Radar";d.fuente=fuente;d.agregado="2026-09-10";
 d.precio=+p[1]||0;d.mantenimiento=+p[2]||0;d.m2Techados=+p[3]||0;d.m2Libres=0;d.dorms=+p[4]||0;d.banos=+p[5]||0;d.estacionamientos=+p[6]||0;
-d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={};d.notas="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";d.fotos=[];
+d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={rodrigo:0,mama:0};d.notas="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";d.fotos=[];d.antiguedad=null;
 if(p[7]&&p[8]){d.geo=[+p[7],+p[8]];d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
+var gg=gp(d);
+d.commute={smartfit:null,"super":null,malecon:gg?Math.max(1,Math.round(km(gg[0],gg[1],MAL[0],MAL[1])/4.5*60)):null};
+if(gg)d.maps="https://www.google.com/maps/search/?api=1&query="+gg[0]+","+gg[1];
 if(fuente==="Adondevivir"){d.id="P"+p[0];d.url="https://www.adondevivir.com/propiedades/clasificado/x-"+p[0]+".html";
 d.direccion=p[11]||"";d.nombre=(p[11]||p[12]||zona)+(p[12]?(" \u00b7 "+p[12]):"");if(p[10])d.fotos=[navurl(p[10])];}
 else if(fuente==="InfoCasas"){d.id="F"+p[0];d.url="https://www.infocasas.com.pe/"+p[11]+"/"+p[0];
@@ -1166,23 +1171,30 @@ d.direccion=p[11]||"";d.nombre=(p[11]||zona)+" (proyecto)";d.estreno=1;}
 return d;}
 function key(d){var dk=(d.direccion||"").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"");
 if(!dk||dk.length<6)return null;return dk+"|"+(d.precio||0)+"|"+(d.m2Techados||0)+"|"+(d.dorms||0);}
-function fusiona(){if(PEND>0||typeof DEPAS==="undefined"||DEPAS.__nuevo)return;
+function propio(d){return /WhatsApp|PDF/i.test(d.fuente||"");}
+function tocado(d){return !!(d.estado&&d.estado!=="por_ver");}
+function pasa(d){if(propio(d)||tocado(d))return true;var g=gp(d);if(!g)return false;
+if((d.m2Techados||0)<MINM2)return false;return km(g[0],g[1],MAL[0],MAL[1])<=RADIO;}
+function fusiona(){if(PEND>0||typeof DEPAS==="undefined"||DEPAS.__v2)return;
 var vivos={};["adv","info","nexo"].forEach(function(k){(LOTES[k]||[]).forEach(function(p){vivos[p[0]]=1;});});
 var conservar=[];
-DEPAS.forEach(function(d){var tocado=d.estado&&d.estado!=="por_ver";var id=pid(d.url);
-var sigue=id&&vivos[id];var propio=/WhatsApp|PDF/i.test(d.fuente||"");
-if(propio){conservar.push(d);return;}
-if(sigue){d.id=id?("P"+id):d.id;conservar.push(d);return;}
-if(tocado){d.retirado=1;d.notas=(d.notas||"")+" [Aviso retirado del portal el "+new Date().toISOString().slice(0,10)+"]";conservar.push(d);}});
+DEPAS.forEach(function(d){if(!d.commute||typeof d.commute!=="object"){var g0=gp(d);
+d.commute={smartfit:null,"super":null,malecon:g0?Math.max(1,Math.round(km(g0[0],g0[1],MAL[0],MAL[1])/4.5*60)):null};}
+if(!d.rating||typeof d.rating!=="object")d.rating={rodrigo:0,mama:0};
+var id=pid(d.url);
+if(propio(d)){conservar.push(d);return;}
+if(id&&vivos[id]){d.id="P"+id;conservar.push(d);return;}
+if(tocado(d)){d.retirado=1;if((d.notas||"").indexOf("retirado del portal")<0)d.notas=(d.notas||"")+" [Aviso retirado del portal, verificado 10-sep-2026]";conservar.push(d);}});
 var nuevos=[];
 (LOTES.adv||[]).forEach(function(p){nuevos.push(mk(p,"Adondevivir"));});
 (LOTES.info||[]).forEach(function(p){nuevos.push(mk(p,"InfoCasas"));});
 (LOTES.nexo||[]).forEach(function(p){nuevos.push(mk(p,"Nexo Inmobiliario"));});
 var vistos={},ids={};conservar.forEach(function(d){var k=key(d);if(k)vistos[k]=1;ids[d.id]=1;});
 var out=conservar.slice();
-nuevos.forEach(function(d){if(ids[d.id])return;var k=key(d);if(k&&vistos[k])return;if(k)vistos[k]=1;ids[d.id]=1;out.push(d);});
+nuevos.forEach(function(d){if(ids[d.id])return;var k=key(d);if(k&&vistos[k])return;if(!pasa(d))return;if(k)vistos[k]=1;ids[d.id]=1;out.push(d);});
+out=out.filter(pasa);
 DEPAS.length=0;for(var i=0;i<out.length;i++)DEPAS.push(out[i]);
-DEPAS.__nuevo=1;if(window.render)render();if(window.renderMapa)renderMapa();}
+DEPAS.__v2=1;if(window.render)render();if(window.renderMapa)renderMapa();}
 var advBuf=[];var advGot=0;
 function advChunk(v){v.split(";").forEach(function(r){if(r)advBuf.push(r.split("|"));});advGot++;
 if(advGot===3){LOTES.adv=advBuf;PEND--;fusiona();}}
