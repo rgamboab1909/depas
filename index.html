@@ -1157,7 +1157,7 @@ function mk(p,fuente){var d={};var base=DEPAS[0]||{};for(var k in base)d[k]=null
 var zona=nz(p[9]);
 d.zona=zona;d.estado="por_ver";d.quien="Radar";d.fuente=fuente;d.agregado="2026-09-10";
 d.precio=+p[1]||0;d.mantenimiento=+p[2]||0;d.m2Techados=+p[3]||0;d.m2Libres=0;d.dorms=+p[4]||0;d.banos=+p[5]||0;d.estacionamientos=+p[6]||0;
-d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={rodrigo:0,mama:0};d.notas="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";d.fotos=[];d.antiguedad=null;
+d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={rodrigo:0,mama:0};d.notas={rodrigo:"",mama:""};d.vista="";d.orientacion="";d.entregaNota="";d.cita="";d.contacto="";d.entrega="";d.incluye="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";d.fotos=[];d.antiguedad=null;
 if(p[7]&&p[8]){d.geo=[+p[7],+p[8]];d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
 var gg=gp(d);
 d.commute={smartfit:null,"super":null,malecon:gg?Math.max(1,Math.round(km(gg[0],gg[1],MAL[0],MAL[1])/4.5*60)):null};
@@ -1184,7 +1184,7 @@ if(!d.rating||typeof d.rating!=="object")d.rating={rodrigo:0,mama:0};
 var id=pid(d.url);
 if(propio(d)){conservar.push(d);return;}
 if(id&&vivos[id]){d.id="P"+id;conservar.push(d);return;}
-if(tocado(d)){d.retirado=1;if((d.notas||"").indexOf("retirado del portal")<0)d.notas=(d.notas||"")+" [Aviso retirado del portal, verificado 10-sep-2026]";conservar.push(d);}});
+if(tocado(d)){d.retirado=1;if((d.nombre||"").indexOf("retirado")<0)d.nombre=(d.nombre||"")+" \u2014 aviso retirado";conservar.push(d);}});
 var nuevos=[];
 (LOTES.adv||[]).forEach(function(p){nuevos.push(mk(p,"Adondevivir"));});
 (LOTES.info||[]).forEach(function(p){nuevos.push(mk(p,"InfoCasas"));});
