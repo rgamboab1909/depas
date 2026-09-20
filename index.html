@@ -287,7 +287,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
 const TC = 3.365; // S/ por US$ (17 ago 2026)
 
 // Tope: 250k cómodo / 260k techo duro — TODO INCLUIDO (depa + estacionamiento + depósito)
-const BUDGET = { ok: 250000, max: 260000 };
+const BUDGET = { ok: 280000, max: 320000 };
 
 // Los 3 destinos que medimos (minutos)
 const DESTINOS = [
@@ -1002,7 +1002,7 @@ window.__radar=(function(){
  function val(d,k){ if(k==="pm2")return (d.precio&&d.m2Techados)?d.precio/d.m2Techados:null; if(k==="m2")return d.m2Techados; if(k==="mant")return d.mantenimiento; if(k==="estac")return d.estacionamientos; if(k==="nombre")return d.nombre; return d[k]; }
  function apply(){
   try{
-   if(!ALLD) ALLD=DEPAS.slice();
+   if(window.__MASTER&&window.__MASTER.length>(ALLD?ALLD.length:0))ALLD=window.__MASTER.slice();if(!ALLD) ALLD=DEPAS.slice();
    var a=document.getElementById("fm2min"), b=document.getElementById("fm2max"), o=document.getElementById("forden");
    var mn=a?parseFloat(a.value):NaN, mx=b?parseFloat(b.value):NaN, k=o?o.value:"tablero";
    var list=ALLD.filter(function(d){var m=d.m2Techados; if(!isNaN(mn)&&(m==null||m<mn))return false; if(!isNaN(mx)&&(m==null||m>mx))return false; return true;});
@@ -1142,7 +1142,7 @@ window.__radar=(function(){
 <script>
 (function(){
 var EX="https://script.google.com/macros/s/"+["AKfycbyq","VBFLqFgA","hy0RQtvo","jLjAu24E","-KmHlYwN","X5xhdTp4","Vw2eNKsq","77mbewA2","qSIpff49","5g"].join("")+"/exec";
-var MAL=[-12.12747,-77.03571],RADIO=1.2,MINM2=70;
+var MAL=[-12.12747,-77.03571],RADIO=1.5,MINM2=70;
 function km(a,b,c,d){var R=6371,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t;var s=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(s));}
 function gp(d){if(!d.geo)return null;return (d.geo instanceof Array)?d.geo:[d.geo.lat,d.geo.lon];}
 function navurl(c){var p=c.split(".");if(p.length<3)return "";return "https://img"+p[0]+".naventcdn.com/avisos/"+p.slice(1,-1).join("/")+"/360x266/"+p[p.length-1]+".jpg";}
@@ -1155,7 +1155,7 @@ function tryGet(key,cb,n){fetch(EX+"?blob="+key,{cache:"no-store"}).then(functio
 .catch(function(){if((n||0)<6)setTimeout(function(){tryGet(key,cb,(n||0)+1);},2000*((n||0)+1));});}
 function mk(p,fuente){var d={};var base=DEPAS[0]||{};for(var k in base)d[k]=null;
 var zona=nz(p[9]);
-d.zona=zona;d.estado="por_ver";d.quien="Radar";d.fuente=fuente;d.agregado="2026-09-10";
+d.zona=zona;d.estado="por_ver";d.quien="Radar";d.fuente=fuente;d.agregado="2026-09-20";
 d.precio=+p[1]||0;d.mantenimiento=+p[2]||0;d.m2Techados=+p[3]||0;d.m2Libres=0;d.dorms=+p[4]||0;d.banos=+p[5]||0;d.estacionamientos=+p[6]||0;
 d.medioBano=0;d.gastosCierre=0;d.precioEst=0;d.precioDep=0;d.incluye="";d.deposito=0;d.luz=0;d.rating={rodrigo:0,mama:0};d.notas={rodrigo:"",mama:""};d.vista="";d.orientacion="";d.entregaNota="";d.cita="";d.contacto="";d.entrega="";d.incluye="";d.pros=[];d.contras=[];d.caminando=null;d.maps="";d.fotos=[];d.antiguedad=null;
 if(p[7]&&p[8]){d.geo=[+p[7],+p[8]];d.geoOk=1;}else{d.geo=null;d.geoOk=0;}
@@ -1167,7 +1167,7 @@ d.direccion=p[11]||"";d.nombre=(p[11]||p[12]||zona)+(p[12]?(" \u00b7 "+p[12]):""
 else if(fuente==="InfoCasas"){d.id="F"+p[0];d.url="https://www.infocasas.com.pe/"+p[11]+"/"+p[0];
 d.direccion=p[12]||"";d.nombre=(p[12]||zona)+" \u00b7 "+zona;if(p[10])d.fotos=[icurl(p[10])];}
 else{d.id="N"+p[0];d.url="https://nexoinmobiliario.pe/departamentos/"+(zona==="Miraflores"?"miraflores":"barranco")+"/"+p[12];
-d.direccion=p[11]||"";d.nombre=(p[11]||zona)+" (proyecto)";d.estreno=1;}
+d.direccion=p[11]||"";d.nombre=(p[14]||p[11]||zona)+" (proyecto)";d.estreno=1;}
 return d;}
 function key(d){var dk=(d.direccion||"").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"");
 if(!dk||dk.length<6)return null;return dk+"|"+(d.precio||0)+"|"+(d.m2Techados||0)+"|"+(d.dorms||0);}
@@ -1194,12 +1194,15 @@ var out=conservar.slice();
 nuevos.forEach(function(d){if(ids[d.id])return;var k=key(d);if(k&&vistos[k])return;if(!pasa(d))return;if(k)vistos[k]=1;ids[d.id]=1;out.push(d);});
 out=out.filter(pasa);
 DEPAS.length=0;for(var i=0;i<out.length;i++)DEPAS.push(out[i]);
-DEPAS.__v2=1;if(window.render)render();if(window.renderMapa)renderMapa();}
+DEPAS.__v2=1;window.__MASTER=DEPAS.slice();if(window.render)render();if(window.renderMapa)renderMapa();try{if(window.__radar&&window.__radar.apply)window.__radar.apply();}catch(e){}}
 var advBuf=[];var advGot=0;
 function advChunk(v){v.split(";").forEach(function(r){if(r)advBuf.push(r.split("|"));});advGot++;
 if(advGot===3){LOTES.adv=advBuf;PEND--;fusiona();}}
 tryGet("rgbadv1",advChunk);tryGet("rgbadv2",advChunk);tryGet("rgbadv3",advChunk);
-tryGet("rgbinfo",function(v){LOTES.info=v.split(";").filter(Boolean).map(function(r){return r.split("|");});PEND--;fusiona();});
+var infoBuf=[],infoGot=0,infoDone=0;function infoFin(){if(infoDone)return;infoDone=1;LOTES.info=infoBuf;PEND--;fusiona();}
+function infoChunk(v){v.split(";").forEach(function(r){if(r)infoBuf.push(r.split("|"));});infoGot++;if(infoGot>=2)infoFin();}
+tryGet("rgbinfo",infoChunk);tryGet("rgbinfo2",infoChunk);
+setTimeout(function(){if(infoGot>0)infoFin();},25000);
 tryGet("rgbnexo",function(v){LOTES.nexo=v.split(";").filter(Boolean).map(function(r){return r.split("|");});PEND--;fusiona();});
 var n=0;var t=setInterval(function(){fusiona();if(++n>240)clearInterval(t);},1500);
 })();
