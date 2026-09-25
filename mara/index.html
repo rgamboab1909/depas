@@ -889,7 +889,7 @@ window.__radar=(function(){
  function val(d,k){ if(k==="pm2")return (d.precio&&d.m2Techados)?d.precio/d.m2Techados:null; if(k==="m2")return d.m2Techados; if(k==="mant")return d.mantenimiento; if(k==="estac")return d.estacionamientos; if(k==="nombre")return d.nombre; return d[k]; }
  function apply(){
   try{
-   if(!ALLD) ALLD=DEPAS.slice();
+   if(window.__MASTER&&window.__MASTER.length>(ALLD?ALLD.length:0))ALLD=window.__MASTER.slice();if(!ALLD) ALLD=DEPAS.slice();
    var a=document.getElementById("fm2min"), b=document.getElementById("fm2max"), o=document.getElementById("forden");
    var mn=a?parseFloat(a.value):NaN, mx=b?parseFloat(b.value):NaN, k=o?o.value:"tablero";
    var list=ALLD.filter(function(d){var m=d.m2Techados; if(!isNaN(mn)&&(m==null||m<mn))return false; if(!isNaN(mx)&&(m==null||m>mx))return false; return true;});
@@ -942,44 +942,6 @@ function scan(){var c=cur(),now=Date.now(),n=0;Object.keys(c).forEach(function(k
 function tick(){var n=Date.now();if(n-lastTick<250)return;lastTick=n;scan();}
 ['click','change','input','keyup','drop','dragend','mouseup','touchend'].forEach(function(ev){document.addEventListener(ev,tick,true);});
 loadLocal();base=cur();redraw();pull();setInterval(pull,20000);
-})();
-</script>
-
-<script>
-(function(){
-var U="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?blob=marafotos";
-var CK='mara_fotos_v1';
-var HOST='https://img10.naventcdn.com/avisos/';
-function url(t){var p=t.split('.');return HOST+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'/'+p[5]+'/'+p[6]+'/360x266/'+p[7]+'.jpg';}
-function fill(txt){if(!txt)return 0;var map={};txt.split(';').forEach(function(row){var i=row.indexOf('=');if(i<0)return;map[row.slice(0,i)]=row.slice(i+1).split('_').map(url);});var n=0;DEPAS.forEach(function(d){var key=(d.url||'').match(/x-(\d+)\.html/);key=key?key[1]:null;if(key&&map[key]&&map[key].length){d.fotos=map[key];n++;}});if(n){try{render();}catch(e){}}return n;}
-try{var c=localStorage.getItem(CK);if(c)fill(c);}catch(e){}
-fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}fill(j.v);}}).catch(function(){});
-})();
-</script>
-
-<script>
-(function(){
-var U="https://script.google.com/macros/s/AKfycbyqVBFLqFgAhy0RQtvojLjAu24E-KmHlYwNX5xhdTp4Vw2eNKsq77mbewA2qSIpff495g/exec?blob=maraurb", CK='mara_urb_v1';
-var GEO={"Sagitario":[-12.16422,-76.99527],"Camino Real":[-12.14722,-77.01099],"La Cruceta":[-12.15625,-76.99001],"Cruz De Surco":[-12.1203,-76.98767],"Chama":[-12.12606,-76.99653],"Los Alamos":[-12.166,-76.98455],"La Castellana":[-12.13461,-77.00211],"Valle Hermoso":[-12.1233,-76.97458],"Higuereta":[-12.12261,-76.99474],"Vista Alegre":[-12.134,-76.99212],"La Alborada":[-12.12494,-76.9886],"Monterrico":[-12.09502,-76.96964],"Los Alamos De Monterrico":[-12.10842,-76.96362],"Los Rosales":[-12.14296,-76.99826],"Parque Alto":[-12.14483,-77.01169],"Las Gardenias":[-12.11915,-76.97429],"Las Magnolias":[-12.13444,-77.0112],"El Derby":[-12.09857,-76.97792],"Tambo De Monterrico":[-12.11585,-76.9922],"Pampas De Santa Teresa":[-12.12208,-76.98054],"Santa Constanza":[-12.08294,-76.97707],"Chacarilla Del Estanque":[-12.11,-76.985],"Las Casuarinas":[-12.115,-76.97],"Santa Teresa":[-12.12208,-76.98054],"Surco":[-12.1251,-76.98216],"Barranco":[-12.14396,-77.02027],"San Borja":[-12.09645,-76.99569],"San Borja Norte":[-12.09452,-77.00242],"San Borja Sur":[-12.10069,-77.00176],"San Borja Residencial":[-12.10903,-77.00457],"Chacarilla":[-12.11021,-76.98537],"Javier Prado":[-12.08383,-76.9887],"Corpac":[-12.09859,-77.01136],"Rosario del Norte":[-12.10676,-77.0077],"Las Torres de":[-12.10903,-77.00457]};
-var COL=[-12.1342,-76.9797], CASA=[-12.15214,-77.02322], JOCK=[-12.0855,-76.9770];
-function hav(a,b){var R=6371,p1=a[0]*Math.PI/180,p2=b[0]*Math.PI/180,dp=(b[0]-a[0])*Math.PI/180,dl=(b[1]-a[1])*Math.PI/180;var x=Math.sin(dp/2)*Math.sin(dp/2)+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);return 2*R*Math.asin(Math.sqrt(x));}
-function mins(k){return Math.round(k/22*60+4);}
-function ph(t){var p=t.split('.');return 'https://img10.naventcdn.com/avisos/'+p[1]+'/'+p[2]+'/'+p[3]+'/'+p[4]+'/'+p[5]+'/'+p[6]+'/360x266/'+p[7]+'.jpg';}
-function norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
-function add(txt){if(!txt)return 0;
- var seen={};DEPAS.forEach(function(d){seen[norm(d.nombre)+'|'+d.dorms+'|'+(d.m2Techados||0)+'|'+Math.round((d.precio||0)/50)]=1;});
- var n=0, k=DEPAS.length;
- txt.split(';').forEach(function(row){var f=row.split('|');if(f.length<9)return;
-  var id=f[0],p=+f[1],mm=+f[2],m2=+f[3],dor=+f[4],ban=+f[5],est=+f[6],urb=f[7]||'Surco',zona=f[8],fot=(f[9]||'').split(',').filter(Boolean).map(ph);
-  var key=norm(urb)+'|'+dor+'|'+m2+'|'+Math.round(p/50); if(seen[key])return; seen[key]=1;
-  var g=GEO[urb]||GEO[zona]||GEO['Surco'];
-  var aprox=!GEO[urb];
-  k++;var tot=p+mm;
-  DEPAS.push({id:'U'+(++n),nombre:urb+(aprox?' (sin urb.)':''),zona:zona,direccion:urb+', '+zona,estado:'por_ver',quien:'Radar',fuente:'Urbania',url:'https://urbania.pe/inmueble/clasificado/x-'+id,agregado:'2026-09-01',cita:'',contacto:'por confirmar en el aviso',precio:p,precioEst:null,precioDep:null,incluye:mm?('Alquiler S/'+p+' + mantenimiento S/'+mm+' = S/'+tot+' al mes.'):('Alquiler S/'+p+'. El aviso NO declara mantenimiento.'),mantenimiento:mm||null,gastosCierre:0,m2Techados:m2||null,m2Libres:0,dorms:dor,banos:ban||null,medioBano:false,piso:null,ascensores:null,estreno:false,antiguedad:null,entrega:'inmediata',entregaNota:'Disponibilidad por confirmar.',estacionamientos:est,deposito:null,orientacion:'por confirmar',luz:null,vista:'por confirmar',balcon:false,commute:{colegio:mins(hav(g,COL)),casa:mins(hav(g,CASA)),jockey:mins(hav(g,JOCK))},caminando:'',fotos:fot,maps:'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(urb+', Lima')+'&destination=Jr.+Morro+Solar+550,+Santiago+de+Surco',rating:{mara:0,rodrigo:0},notas:{mara:'',rodrigo:''},pros:[(tot<=4000?('S/'+tot+' al mes, dentro del presupuesto'):('S/'+tot+' al mes')),(est?est+' estacionamiento(s)':null),'Nuevo: viene de Urbania'].filter(Boolean),contras:[(est?null:'Sin estacionamiento'),(mm?null:'No declara mantenimiento'),(aprox?'Ubicacion aproximada':null),'Sin visitar y sin confirmar por telefono'].filter(Boolean),geo:{lat:g[0],lon:g[1]}});
- });
- if(n){try{render();}catch(e){}} return n;}
-try{var c=localStorage.getItem(CK);if(c)add(c);}catch(e){}
-fetch(U,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&j.v){try{localStorage.setItem(CK,j.v);}catch(e){}add(j.v);}}).catch(function(){});
 })();
 </script>
 
