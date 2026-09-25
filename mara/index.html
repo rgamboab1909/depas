@@ -978,7 +978,7 @@ function mk(p){var d={};
 var LOTES={},PEND=4,BUF={adv:[],urb:[],inf:[],bab:[]},GOT={adv:0,urb:0};
 function tryGet(key,cb,n){fetch(EX+"?blob="+key,{cache:"no-store"}).then(function(r){if(r.status!==200)throw 0;return r.text();})
 .then(function(t){if(t.indexOf(String.fromCharCode(123))!==0)throw 0;var o=JSON.parse(t);if(!o||!o.v)throw 0;cb(o.v);})
-.catch(function(){if((n||0)<6)setTimeout(function(){tryGet(key,cb,(n||0)+1);},2000*((n||0)+1));});}
+.catch(function(){if((n||0)<40)setTimeout(function(){tryGet(key,cb,(n||0)+1);},Math.min(5000,700*((n||0)+1)));});}
 function rows(v){return v.split(";").filter(Boolean).map(function(r){return r.split("|");});}
 function fusiona(){if(PEND>0||typeof DEPAS==="undefined"||DEPAS.__v2)return;
  var vistos={},out=[];
@@ -996,7 +996,7 @@ tryGet("mvA1",advChunk);tryGet("mvA2",advChunk);
 tryGet("mvU1",urbChunk);tryGet("mvU2",urbChunk);
 tryGet("mvI1",function(v){LOTES.inf=rows(v);PEND--;fusiona();});
 tryGet("mvB1",function(v){LOTES.bab=rows(v);PEND--;fusiona();});
-setTimeout(function(){if(GOT.adv===1){LOTES.adv=BUF.adv;PEND--;}if(GOT.urb===1){LOTES.urb=BUF.urb;PEND--;}fusiona();},30000);
+setTimeout(function(){if(GOT.adv===1){LOTES.adv=BUF.adv;PEND--;}if(GOT.urb===1){LOTES.urb=BUF.urb;PEND--;}fusiona();},90000);
 var n=0,t=setInterval(function(){fusiona();if(++n>240)clearInterval(t);},1500);
 })();
 </script>
