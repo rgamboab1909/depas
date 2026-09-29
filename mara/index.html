@@ -647,8 +647,7 @@ function renderMapa(){
        (d.maps?' · <a href="'+d.maps+'" target="_blank" rel="noopener">Maps ↗</a>':"")+'</div>',{maxWidth:265})
      .addTo(CAPA);
   });
-  if(list.length && !MAPA.__enc){ MAPA.fitBounds(L.latLngBounds([[-12.176,-77.046],[-12.074,-76.963]]), {padding:[12,12]}); MAPA.__enc=1; }
-  setTimeout(()=>MAPA.invalidateSize(), 60);
+  setTimeout(function(){ MAPA.invalidateSize(); if(!MAPA.__enc){ MAPA.fitBounds(L.latLngBounds([[-12.176,-77.046],[-12.074,-76.963]]), {padding:[10,10]}); MAPA.__enc=1; } }, 120);
   document.getElementById("mapleg").innerHTML =
     Object.keys(ZC).map(function(z){return '<span><i style="background:'+ZC[z]+'"></i>'+z+' ('+(cnt[z]||0)+')</span>';}).join("")+
     '<span><i style="background:#14161a;border-radius:2px"></i>referencia</span>'+
