@@ -6,6 +6,9 @@
 <title>Venta · Mara</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <style>
 :root{
   color-scheme: light;
@@ -201,6 +204,13 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
   .chartcard{padding:12px}
 }
 @media print{header.top,.filters,.actions,.tabs{display:none}}
+
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#2F6FBF;color:#fff;font:700 12px/30px ui-sans-serif,system-ui,sans-serif}
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(47,111,191,.28)}
+#map{height:min(68vh,560px);min-height:380px;border-radius:10px;overflow:hidden}
+.mk-lbl{background:rgba(255,255,255,.92);border:0;box-shadow:0 1px 3px rgba(0,0,0,.18);font:600 11px/1.2 ui-sans-serif,system-ui,sans-serif;padding:2px 6px;border-radius:4px;color:#14161a}
+.mk-lbl:before{display:none}
+.leaflet-popup-content{margin:10px 12px;font:13px/1.45 ui-sans-serif,system-ui,sans-serif}
 </style>
 </head>
 <body>
@@ -255,7 +265,7 @@ ul.chk-list li::before{content:"☐ ";color:var(--muted)}
   <section id="v-mapa" class="view">
     <div class="chartcard">
       <h2>Dónde está cada uno</h2>
-      <p class="sub">El color del punto es el precio por m²: mientras más oscuro, más caro por metro. El rombo verde es el centro de la zona (Surco / San Borja). Click en un punto para abrir la ficha. Los proyectos en construcción están ubicados a nivel de calle, no de número exacto.</p>
+      <p class="sub">El color del punto es el precio por m²: mientras más oscuro, más caro por metro. Los puntos son avisos, con el color de su distrito. Se agrupan al alejar el mapa: acércate o haz click en un grupo para separarlos. Los rombos negros son tus referencias. Click en un punto para ver la ficha con foto y precio.</p>
       <div id="map"></div>
       <div class="legend" id="mapleg"></div>
       <div id="sinubicar" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div>
@@ -591,68 +601,60 @@ function renderScatter(){
 
 /* ============ mapa ============ */
 const RAMPA = ["#86b6ef","#5598e7","#2a78d6","#1c5cab","#104281"]; // azul secuencial, claro→oscuro
-const REFS = [{n:"Parque principal", g:[-12.1180,-76.9960]}];
+const REFS = [{n:"Colegio Franco Peruano", g:[-12.1342,-76.9797]},{n:"Casa actual", g:[-12.15214,-77.02322]},{n:"Jockey Plaza", g:[-12.0855,-76.977]}];
 let MAPA = null, CAPA = null;
 
 function renderMapa(){
-  const list = visibles().filter(d=>d.geo && d.precio!=null);
+  const list = visibles().filter(d=>d.geo);
   const sin  = visibles().filter(d=>!d.geo);
   if(typeof L === "undefined"){ planoSimple(list, sin); return; }
-
+  const ZC={"Surco":"#E0762A","San Borja":"#2F6FBF","Barranco":"#2E8B57"};
   if(!MAPA){
-    MAPA = L.map("map",{scrollWheelZoom:false}).setView([-12.128,-77.030], 14);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-      {maxZoom:19, attribution:'© OpenStreetMap · © CARTO'}).addTo(MAPA);
+    MAPA = L.map("map",{scrollWheelZoom:false}).setView([-12.118,-77.002], 13);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(MAPA);
     MAPA.on("click", ()=>MAPA.scrollWheelZoom.enable());
+    var ZL=[["SURCO",-12.148,-76.992],["SAN BORJA",-12.093,-76.999],["BARRANCO",-12.150,-77.022]];
+    ZL.forEach(function(z){
+      L.marker([z[1],z[2]],{interactive:false,zIndexOffset:-500,icon:L.divIcon({className:"",iconSize:[130,18],iconAnchor:[65,9],
+        html:'<div style="font:800 11px/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;color:#55606b;text-align:center;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 4px #fff,0 0 4px #fff;white-space:nowrap">'+z[0]+'</div>'})}).addTo(MAPA);
+    });
+    REFS.forEach(function(r){
+      L.marker(r.g,{zIndexOffset:900,icon:L.divIcon({className:"",iconSize:[18,18],iconAnchor:[9,9],
+        html:'<div style="width:13px;height:13px;background:#14161a;border:2.5px solid #fff;transform:rotate(45deg);box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>'})})
+       .bindTooltip(r.n,{permanent:true,direction:"right",className:"mk-lbl",offset:[11,0]}).addTo(MAPA);
+    });
   }
   if(CAPA) MAPA.removeLayer(CAPA);
-  CAPA = L.layerGroup().addTo(MAPA);
-
-  // bandas de precio por m² — SOLO sobre los que tienen precio.
-  // Si se cuela un null, Math.min lo convierte en 0 y descuadra toda la escala.
-  const pm = list.filter(d=>precioM2(d)!=null).map(precioM2);
-  const min = pm.length?Math.min(...pm):0, max = pm.length?Math.max(...pm):1, paso = ((max-min)||1)/5;
-  const banda = d => Math.min(4, Math.max(0, Math.floor((precioM2(d)-min)/paso)));
-
-  REFS.forEach(r=>{
-    L.marker(r.g, {icon: L.divIcon({className:"", iconSize:[16,16],
-      html:`<div style="width:14px;height:14px;background:var(--good);border:2px solid #fff;
-             transform:rotate(45deg);box-shadow:0 1px 4px rgba(0,0,0,.35)"></div>`})})
-     .bindTooltip(r.n,{permanent:true,direction:"right",className:"mk-lbl",offset:[10,0]})
+  CAPA = (typeof L.markerClusterGroup === "function")
+    ? L.markerClusterGroup({maxClusterRadius:48,showCoverageOnHover:false,spiderfyOnMaxZoom:true,disableClusteringAtZoom:16})
+    : L.layerGroup();
+  MAPA.addLayer(CAPA);
+  const cnt={};
+  list.forEach(function(d){
+    const col = ZC[d.zona] || "#7a7a7a";
+    cnt[d.zona]=(cnt[d.zona]||0)+1;
+    const m2 = d.m2Techados||0;
+    const ppm = (d.precio&&m2)?Math.round(d.precio/m2):null;
+    const foto = (d.fotos&&d.fotos[0]) ? '<img src="'+d.fotos[0]+'" alt="" style="width:100%;height:112px;object-fit:cover;border-radius:6px;margin-bottom:7px" loading="lazy">' : "";
+    L.circleMarker(d.geo,{radius:7,color:"#fff",weight:2,fillColor:col,fillOpacity:.95})
+     .bindPopup('<div style="min-width:205px;max-width:235px">'+foto+
+       '<b>'+(d.direccion||d.zona)+'</b><br>'+
+       '<span style="font-size:15px;font-weight:700">'+fmtUSD(d.precio||0)+'</span>'+
+       (ppm?' <span class="pz">· US$ '+ppm.toLocaleString("en-US")+'/m²</span>':"")+'<br>'+
+       '<span class="pz">'+m2+' m² · '+(d.dorms||0)+'D '+(d.banos||0)+'B · '+d.zona+' · '+d.fuente+'</span><br>'+
+       '<a href="#" onclick="abrir(\''+d.id+'\');return false">Ver ficha</a>'+
+       (d.url?' · <a href="'+d.url+'" target="_blank" rel="noopener">Aviso ↗</a>':"")+
+       (d.maps?' · <a href="'+d.maps+'" target="_blank" rel="noopener">Maps ↗</a>':"")+'</div>',{maxWidth:265})
      .addTo(CAPA);
   });
-
-  list.forEach(d=>{
-    const t = topeInfo(d);
-    const sinPrecio = d.precio==null;
-    L.circleMarker(d.geo, sinPrecio
-        ? {radius:9, color:"var(--muted)", weight:3, dashArray:"3 3", fillColor:"var(--surface-1)", fillOpacity:1}
-        : {radius:9, color:"#fff", weight:2, fillColor:RAMPA[banda(d)], fillOpacity:1})
-     .bindPopup(
-       `<b>${d.nombre}</b><br>`+
-       (d.precio==null
-          ? `<b style="color:#a33">Sin precio publicado</b> · ${d.m2Techados} m²<br>`
-          : `${fmtUSD(precioTodo(d))} · ${d.m2Techados} m² · <b>${Math.round(precioM2(d)).toLocaleString("es-PE")} S/ por m²</b><br>`)+
-       `<span class="pz">${d.dorms}D ${d.banos}B · ${d.antiguedad} años · ${estadoInfo(d.estado).label}</span><br>`+
-       `<a href="#" onclick="abrir('${d.id}');return false">Ver ficha</a> · `+
-       `<a href="${d.maps}" target="_blank" rel="noopener">Maps ↗</a>`)
-     .addTo(CAPA);
-  });
-
-  if(list.length){
-    const b = L.latLngBounds(list.map(d=>d.geo).concat(REFS.map(r=>r.g)));
-    MAPA.fitBounds(b, {padding:[42,42], maxZoom:15});
-  }
+  if(list.length){ MAPA.fitBounds(L.latLngBounds(list.map(d=>d.geo)), {padding:[28,28], maxZoom:15}); }
   setTimeout(()=>MAPA.invalidateSize(), 60);
-
-  const nSin = list.filter(d=>d.precio==null).length;
   document.getElementById("mapleg").innerHTML =
-    `<span style="color:var(--muted)">S/ por m²:</span>` +
-    RAMPA.map((c,i)=>`<span><i style="background:${c}"></i>${Math.round(min+paso*i).toLocaleString("es-PE")}${i===4?"+":""}</span>`).join("") +
-    (nSin?`<span><i style="background:var(--surface-1);border:2px dashed var(--muted)"></i>sin precio (${nSin})</span>`:"") +
-    `<span><i style="background:var(--good);border-radius:2px"></i>referencia</span>`;
+    Object.keys(ZC).map(function(z){return '<span><i style="background:'+ZC[z]+'"></i>'+z+' ('+(cnt[z]||0)+')</span>';}).join("")+
+    '<span><i style="background:#14161a;border-radius:2px"></i>referencia</span>'+
+    '<span style="color:var(--muted)">Cada punto es un aviso. Se agrupan al alejar; acércate para separarlos.</span>';
   document.getElementById("sinubicar").textContent = sin.length
-    ? `Sin ubicar en el mapa: ${sin.map(d=>d.nombre).join(", ")} — la dirección del aviso es demasiado vaga para geolocalizarla.`
+    ? sin.length+" avisos no tienen dirección verificable, así que no se pintan en el mapa (sí están en el tablero)."
     : "";
 }
 
@@ -827,7 +829,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrar(); });
 function render(){
   const dentro = DEPAS.filter(d=>!sobreTope(d)).length;
   document.getElementById("sub").textContent =
-    `Alquiler · tope S/ 4,000 con mantenimiento · ${DEPAS.length} departamentos · ${dentro} dentro del tope · ${visibles().length} en vista`;
+    `Venta · US$140k – 180k · Surco, San Borja y Barranco · ${DEPAS.length} avisos · ${visibles().length} en vista`;
   if(S.view==="pipeline") renderBoard();
   if(S.view==="tabla") renderTable();
   if(S.view==="cara") renderCmp();
